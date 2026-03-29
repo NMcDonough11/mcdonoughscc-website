@@ -3,7 +3,7 @@
 
   // Replace with your actual published Google Sheet CSV URL
   // To set up: File > Share > Publish to web > CSV format
-  var SHEET_CSV_URL = '';
+  var SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vR924WO2DyQgNVtwpZYHhUG64bli3m0Ucxg8QWDBKAT4UT7KBxODwOgvr2QqzzhHMyzg9pK19cHQD1J/pub?gid=1372138766&single=true&output=csv';
   var TOTAL_SPOTS = 120;
   var POLL_INTERVAL = 60000; // Refresh every 60 seconds
 
@@ -28,17 +28,12 @@
       })
       .then(function (text) {
         var lines = text.trim().split('\n');
-        // Count rows where "Payment Confirmed" column = "Yes"
-        // Assumes header row + data rows, with Payment Confirmed in column E (index 4)
-        var confirmed = 0;
-        for (var i = 1; i < lines.length; i++) {
-          var cols = lines[i].split(',');
-          // Check if payment confirmed (column E, index 4)
-          if (cols.length > 4 && cols[4].trim().toLowerCase() === 'yes') {
-            confirmed++;
-          }
+        // SpotsCount tab: header row "registered", then the count in row 2
+        var registered = 0;
+        if (lines.length >= 2) {
+          registered = parseInt(lines[1].trim(), 10) || 0;
         }
-        var remaining = Math.max(0, TOTAL_SPOTS - confirmed);
+        var remaining = Math.max(0, TOTAL_SPOTS - registered);
         updateDisplay(remaining);
       })
       .catch(function (err) {
