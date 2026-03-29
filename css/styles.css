@@ -1,0 +1,378 @@
+/* ============================================
+   McDonough Stampede Charity Classic
+   Custom Styles
+   ============================================ */
+
+/* --- Brand Tokens --- */
+:root {
+  --mscc-red: #C8102E;
+  --mscc-red-dark: #A00D24;
+  --mscc-black: #1A1A1A;
+  --mscc-cream: #FAF3E8;
+  --mscc-gold: #C5A55A;
+  --mscc-gold-light: #D4B96E;
+}
+
+/* --- Font Loading --- */
+.fonts-loading .font-western {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* --- Fluid Typography Scale --- */
+.font-western {
+  line-height: 1.1;
+}
+
+body {
+  font-size: clamp(0.9375rem, 0.875rem + 0.25vw, 1.0625rem); /* 15px → 17px */
+  line-height: 1.6;
+}
+
+h1.font-western, .text-6xl, .text-7xl {
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 4.5rem);
+}
+
+h2.font-western, .text-4xl, .text-5xl {
+  font-size: clamp(1.75rem, 1.25rem + 2vw, 3rem);
+}
+
+/* Readable measure for body text */
+.max-w-3xl p,
+.max-w-4xl p {
+  max-width: 65ch;
+}
+
+/* --- Tab Navigation & Transitions --- */
+.tab-section {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.35s ease-in-out;
+}
+
+.tab-section.active {
+  display: block;
+  opacity: 1;
+}
+
+/* --- Navigation Links --- */
+.nav-link {
+  color: rgba(255, 255, 255, 0.75);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.25rem;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+  color: var(--mscc-gold);
+}
+
+.nav-link.active {
+  color: var(--mscc-gold);
+  border-bottom-color: var(--mscc-gold);
+}
+
+/* --- Mobile Bottom Nav --- */
+.bottom-nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.bottom-nav-link.active {
+  color: var(--mscc-gold);
+}
+
+.bottom-nav-link svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.bottom-nav-link.register-link {
+  color: var(--mscc-red);
+}
+
+.bottom-nav-link.register-link.active {
+  color: var(--mscc-gold);
+}
+
+/* --- Western Decorative Divider --- */
+.western-divider {
+  height: 4px;
+  background: repeating-linear-gradient(
+    135deg,
+    var(--mscc-red) 0px, var(--mscc-red) 10px,
+    transparent 10px, transparent 20px
+  );
+  border: none;
+}
+
+/* --- Spots Counter Pulse --- */
+.spots-urgent {
+  animation: pulse-red 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* --- Hero Parallax --- */
+.hero-parallax {
+  background-attachment: fixed;
+  background-size: cover;
+  background-position: center;
+}
+
+@media (max-width: 768px) {
+  .hero-parallax {
+    background-attachment: scroll;
+  }
+}
+
+/* --- Scroll Reveal --- */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- FAQ Accordion --- */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 1.5rem;
+}
+
+.faq-item.open .faq-answer {
+  max-height: 500px;
+  padding: 0 1.5rem 1rem;
+}
+
+.faq-chevron {
+  transition: transform 0.3s ease;
+}
+
+.faq-item.open .faq-chevron {
+  transform: rotate(180deg);
+}
+
+/* --- Countdown Digit Animation --- */
+.countdown-unit {
+  min-width: 4.5rem;
+}
+
+/* --- Lightbox --- */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lightbox-overlay.hidden {
+  display: none;
+}
+
+/* --- Hamburger Animation --- */
+.hamburger-line {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  transform-origin: center;
+}
+
+.hamburger-open .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-open .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-open .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* --- Mobile Bottom Nav Safe Area --- */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 4.5rem;
+  }
+}
+
+/* --- Progress Bar --- */
+.progress-bar-fill {
+  transition: width 1s ease-out;
+}
+
+/* --- Card Hover Effects --- */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Gold Gradient Text --- */
+.gold-text {
+  background: linear-gradient(135deg, var(--mscc-gold) 0%, var(--mscc-gold-light) 50%, var(--mscc-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* --- Section Diagonal Divider --- */
+.diagonal-top {
+  clip-path: polygon(0 5%, 100% 0, 100% 100%, 0 100%);
+}
+
+.diagonal-bottom {
+  clip-path: polygon(0 0, 100% 0, 100% 95%, 0 100%);
+}
+
+/* --- Focus States (Accessibility) --- */
+:focus-visible {
+  outline: 2px solid var(--mscc-gold);
+  outline-offset: 2px;
+}
+
+.form-input:focus-visible {
+  border-color: var(--mscc-gold);
+  box-shadow: 0 0 0 3px rgba(197, 165, 90, 0.25);
+  outline: none;
+}
+
+.nav-link:focus-visible,
+.bottom-nav-link:focus-visible {
+  outline: 2px solid var(--mscc-gold);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.faq-trigger:focus-visible {
+  outline: 2px solid var(--mscc-gold);
+  outline-offset: -2px;
+}
+
+/* --- Sponsor Logo Hover --- */
+.sponsor-logo-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sponsor-logo-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Timeline --- */
+.timeline-node {
+  position: relative;
+}
+
+.timeline-node::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(197, 165, 90, 0.3);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 767px) {
+  .timeline-node::before {
+    left: 1.5rem;
+  }
+}
+
+/* --- Selection Color --- */
+::selection {
+  background: var(--mscc-red);
+  color: var(--mscc-cream);
+}
+
+/* --- Reduced Motion --- */
+@media (prefers-reduced-motion: reduce) {
+  .tab-section {
+    transition: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .card-hover:hover {
+    transform: none;
+  }
+
+  .sponsor-logo-card:hover {
+    transform: none;
+  }
+
+  .faq-answer {
+    transition: none;
+  }
+
+  .faq-chevron {
+    transition: none;
+  }
+
+  .hamburger-line {
+    transition: none;
+  }
+
+  .progress-bar-fill {
+    transition: none;
+  }
+
+  .spots-urgent {
+    animation: none;
+  }
+}
+
+/* --- Skip Link (Accessibility) --- */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1.5rem;
+  background: var(--mscc-red);
+  color: var(--mscc-cream);
+  font-weight: 600;
+  border-radius: 0 0 0.5rem 0.5rem;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 0;
+}

@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+/* Custom theme overrides */
+@theme {
+  --color-mscc-red: #C8102E;
+  --color-mscc-red-dark: #A00D24;
+  --color-mscc-black: #1A1A1A;
+  --color-mscc-cream: #FAF3E8;
+  --color-mscc-gold: #C5A55A;
+  --color-mscc-gold-light: #D4B96E;
+  --font-western: "Rye", cursive;
+  --font-body: "Poppins", sans-serif;
+}

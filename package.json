@@ -1,0 +1,26 @@
+{
+  "name": "mcdonoughscc-website",
+  "version": "1.0.0",
+  "description": "McDonough Stampede Charity Classic Website",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx @tailwindcss/cli -i css/input.css -o css/tailwind.css --minify",
+    "watch": "npx @tailwindcss/cli -i css/input.css -o css/tailwind.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NMcDonough11/mcdonoughscc-website.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NMcDonough11/mcdonoughscc-website/issues"
+  },
+  "homepage": "https://github.com/NMcDonough11/mcdonoughscc-website#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.2",
+    "tailwindcss": "^4.2.2"
+  }
+}
