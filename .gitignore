@@ -5,3 +5,5 @@ Thumbs.db
 node_modules/
 .claude/
 .agents/
+.kiro/
+skills-lock.json
