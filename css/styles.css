@@ -312,6 +312,11 @@ h2.font-western, .text-4xl, .text-5xl {
   }
 }
 
+/* --- Photo Carousel --- */
+#photo-carousel::-webkit-scrollbar {
+  display: none;
+}
+
 /* --- Selection Color --- */
 ::selection {
   background: var(--mscc-red);

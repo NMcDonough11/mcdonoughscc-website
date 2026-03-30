@@ -71,6 +71,9 @@
     // Lightbox
     initLightbox();
 
+    // Photo carousel
+    initCarousel();
+
     // Form double-submit prevention
     initForms();
 
@@ -179,6 +182,49 @@
       if (e.key === 'Escape' && !lightbox.classList.contains('hidden')) {
         closeLightbox();
       }
+    });
+  }
+
+  function initCarousel() {
+    var carousel = document.getElementById('photo-carousel');
+    var prevBtn = document.getElementById('carousel-prev');
+    var nextBtn = document.getElementById('carousel-next');
+    if (!carousel) return;
+
+    var scrollAmount = 320;
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', function () {
+        carousel.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener('click', function () {
+        carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      });
+    }
+
+    // Auto-scroll every 4 seconds (pause on hover/touch)
+    var autoScrollInterval = null;
+    function startAutoScroll() {
+      autoScrollInterval = setInterval(function () {
+        if (carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 10) {
+          carousel.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+      }, 4000);
+    }
+    function stopAutoScroll() {
+      clearInterval(autoScrollInterval);
+    }
+
+    startAutoScroll();
+    carousel.addEventListener('mouseenter', stopAutoScroll);
+    carousel.addEventListener('mouseleave', startAutoScroll);
+    carousel.addEventListener('touchstart', stopAutoScroll, { passive: true });
+    carousel.addEventListener('touchend', function () {
+      setTimeout(startAutoScroll, 3000);
     });
   }
 
