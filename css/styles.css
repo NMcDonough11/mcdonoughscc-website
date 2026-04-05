@@ -313,7 +313,8 @@ h2.font-western, .text-4xl, .text-5xl {
 }
 
 /* --- Photo Carousel --- */
-#photo-carousel::-webkit-scrollbar {
+#photo-carousel::-webkit-scrollbar,
+#course-carousel::-webkit-scrollbar {
   display: none;
 }
 

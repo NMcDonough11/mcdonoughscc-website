@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const TABS = ['home', 'the-day', 'sponsors', 'volunteer', 'register'];
+  const TABS = ['home', 'the-day', 'the-course', 'sponsors', 'volunteer', 'register'];
   const DEFAULT_TAB = 'home';
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -186,9 +186,14 @@
   }
 
   function initCarousel() {
-    var carousel = document.getElementById('photo-carousel');
-    var prevBtn = document.getElementById('carousel-prev');
-    var nextBtn = document.getElementById('carousel-next');
+    setupCarousel('photo-carousel', 'carousel-prev', 'carousel-next', 4000);
+    setupCarousel('course-carousel', 'course-carousel-prev', 'course-carousel-next', 5000);
+  }
+
+  function setupCarousel(carouselId, prevId, nextId, interval) {
+    var carousel = document.getElementById(carouselId);
+    var prevBtn = document.getElementById(prevId);
+    var nextBtn = document.getElementById(nextId);
     if (!carousel) return;
 
     var scrollAmount = 320;
@@ -204,7 +209,7 @@
       });
     }
 
-    // Auto-scroll every 4 seconds (pause on hover/touch)
+    // Auto-scroll (pause on hover/touch)
     var autoScrollInterval = null;
     function startAutoScroll() {
       autoScrollInterval = setInterval(function () {
@@ -213,7 +218,7 @@
         } else {
           carousel.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
-      }, 4000);
+      }, interval);
     }
     function stopAutoScroll() {
       clearInterval(autoScrollInterval);
