@@ -188,7 +188,6 @@
   function initCarousel() {
     setupCarousel('photo-carousel', 'carousel-prev', 'carousel-next', 4000);
     setupCarousel('course-carousel', 'course-carousel-prev', 'course-carousel-next', 5000);
-    setupCarousel('hole-sponsor-carousel', 'hole-carousel-prev', 'hole-carousel-next', 3000);
   }
 
   function setupCarousel(carouselId, prevId, nextId, interval) {
