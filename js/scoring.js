@@ -1077,17 +1077,21 @@
 
   function recomputePlayerTotals(player) {
     var scores = player.scores || {};
-    var total = 0;
-    var thru = 0;
+    var total = 0, thru = 0, parPlayed = 0;
     for (var h = 1; h <= 18; h++) {
       var s = scores[String(h)];
       if (s != null && s !== '') {
         total += parseInt(s, 10) || 0;
         thru++;
+        parPlayed += (PAR_BY_HOLE[h] || 0);
       }
     }
     player.total = total;
     player.thru = thru;
+    var hcp = Number(player.handicap) || 0;
+    var netToPar = thru > 0 ? (total - parPlayed) - hcp * thru / 18 : 0;
+    player.netToPar = netToPar;
+    player.netDisplay = Math.round(netToPar);
   }
 
   function findPlayer(playerId) {
