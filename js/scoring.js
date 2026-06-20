@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var API_URL = 'https://script.google.com/macros/s/AKfycbwQ9VGMYtaHLGPRkFStM3h5wu97qGFeQM9Lkwx36GO7snLq3czaQ41_dcc11xermY14/exec';
+  var API_URL = 'https://script.google.com/macros/s/AKfycbyhQUuFTTS7rUXNBD_-1nlKGZPIgF-SHwRRAuk0hZYlSHtVAov3VvRstR-hr22tRg6R/exec';
 
   // Fallback for the score button range until the hole config arrives.
   var DEFAULT_MAX_PER_HOLE = 8;
@@ -23,6 +23,66 @@
   var currentHoleEl, currentParEl, prevBtn, nextBtn, playersList;
   // DOM refs (overview table)
   var theadRow, tbody;
+
+  // Monotonic counter so concurrent JSONP requests do not collide.
+  var jsonpCounter = 0;
+
+  // ---------- JSONP transport ----------
+  //
+  // Apps Script does not reliably send CORS headers, so we cannot use fetch
+  // for the GET path. JSONP loads the response through a <script> tag, which
+  // is not subject to CORS. The server returns `NAME({...json...})` whenever
+  // a `&callback=NAME` query param is present.
+  //
+  // The callback is invoked with the parsed response object, or with
+  // { ok:false, error:'Network error' } on script error or after a ~12s
+  // timeout, which keeps the existing error and retry UI working.
+  function jsonp(params, cb) {
+    var name = '__msccCb_' + (++jsonpCounter) + '_' + Date.now();
+    var script = document.createElement('script');
+    var timeoutId = null;
+    var settled = false;
+
+    function cleanup() {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (script && script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+      try { delete window[name]; } catch (e) { window[name] = undefined; }
+    }
+
+    function done(data) {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      try { cb(data); } catch (e) { console.warn('JSONP cb error:', e); }
+    }
+
+    window[name] = function (data) { done(data); };
+
+    script.onerror = function () {
+      done({ ok: false, error: 'Network error' });
+    };
+
+    timeoutId = setTimeout(function () {
+      done({ ok: false, error: 'Network error' });
+    }, 12000);
+
+    var qs = [];
+    Object.keys(params).forEach(function (k) {
+      var v = params[k];
+      if (v == null) v = '';
+      qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    });
+    qs.push('callback=' + encodeURIComponent(name));
+    qs.push('_t=' + Date.now());
+
+    script.src = API_URL + '?' + qs.join('&');
+    document.body.appendChild(script);
+  }
 
   function init() {
     input = document.getElementById('scoring-code-input');
@@ -81,63 +141,52 @@
     var originalText = btn.textContent;
     btn.textContent = 'Loading...';
 
-    var url = API_URL + '?action=card&code=' + encodeURIComponent(code) + '&_t=' + Date.now();
+    jsonp({ action: 'card', code: code }, function (data) {
+      btn.disabled = false;
+      btn.textContent = originalText;
 
-    fetch(url)
-      .then(function (response) {
-        if (!response.ok) throw new Error('Network error');
-        return response.json();
-      })
-      .then(function (data) {
-        if (!data || !data.ok) {
-          showError('Group code not found. Double check and try again.');
-          hideResults();
-          return;
-        }
-        // Reset per-card transient state.
-        pendingRetry = {};
-        errorByPlayer = {};
-        currentCard = data.card;
-        currentHole = (currentCard && currentCard.startHole) ? currentCard.startHole : 1;
-        renderAll();
-        resultsEl.classList.remove('hidden');
-        // Fetch hole config (par + max per hole) in the background.
-        loadHoleConfig();
-      })
-      .catch(function (err) {
-        console.warn('Scoring fetch error:', err);
+      // Network failure path (script error or 12s timeout).
+      if (data && data.error === 'Network error' && !data.ok) {
+        console.warn('Scoring jsonp network error');
         showError("Couldn't load right now. Try again in a moment.");
         hideResults();
-      })
-      .finally(function () {
-        btn.disabled = false;
-        btn.textContent = originalText;
-      });
+        return;
+      }
+      // Server-rejected path.
+      if (!data || !data.ok) {
+        showError('Group code not found. Double check and try again.');
+        hideResults();
+        return;
+      }
+      // Success.
+      pendingRetry = {};
+      errorByPlayer = {};
+      currentCard = data.card;
+      currentHole = (currentCard && currentCard.startHole) ? currentCard.startHole : 1;
+      renderAll();
+      resultsEl.classList.remove('hidden');
+      // Fetch hole config (par + max per hole) in the background.
+      loadHoleConfig();
+    });
   }
 
   // ---------- Hole config ----------
 
   function loadHoleConfig() {
-    var url = API_URL + '?_t=' + Date.now();
-    fetch(url)
-      .then(function (response) {
-        if (!response.ok) throw new Error('Hole config fetch failed');
-        return response.json();
-      })
-      .then(function (data) {
-        if (!data || !data.ok || !Array.isArray(data.holes)) return;
-        holeConfig = {};
-        data.holes.forEach(function (h) {
-          holeConfig[h.hole] = {
-            par: h.par,
-            maxPerHole: h.maxPerHole || DEFAULT_MAX_PER_HOLE
-          };
-        });
-        renderEntryPanel();
-      })
-      .catch(function (err) {
-        console.warn('Hole config error:', err);
+    jsonp({ action: 'health' }, function (data) {
+      if (!data || !data.ok || !Array.isArray(data.holes)) {
+        console.warn('Hole config error:', data);
+        return;
+      }
+      holeConfig = {};
+      data.holes.forEach(function (h) {
+        holeConfig[h.hole] = {
+          par: h.par,
+          maxPerHole: h.maxPerHole || DEFAULT_MAX_PER_HOLE
+        };
       });
+      renderEntryPanel();
+    });
   }
 
   // ---------- Navigation ----------
@@ -389,20 +438,24 @@
   }
 
   function submitScore(code, playerId, hole, strokes) {
-    // No Content-Type header on purpose. That keeps the request "simple", so
-    // the browser does not fire an OPTIONS preflight to Apps Script.
-    return fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
+    // JSONP under the hood. The helper's network-error sentinel is mapped to
+    // a Promise rejection so onScoreTap/retryWrite's .catch() retry path keeps
+    // firing for true network failures, while real server responses (including
+    // ok:false) flow through .then().
+    return new Promise(function (resolve, reject) {
+      jsonp({
         action: 'submitScore',
         code: code,
         playerId: playerId,
         hole: hole,
         strokes: strokes
-      })
-    }).then(function (response) {
-      if (!response.ok) throw new Error('Network error');
-      return response.json();
+      }, function (data) {
+        if (data && data.error === 'Network error' && !data.ok && !data.card) {
+          reject(new Error('Network error'));
+          return;
+        }
+        resolve(data);
+      });
     });
   }
 
