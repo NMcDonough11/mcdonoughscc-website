@@ -32,6 +32,7 @@
   var lbFullscreenOpen = false;
   var expandedPlayerId = null;         // playerId of the in-tab row that's expanded
   var lastGroups = null;               // last server payload (groups)
+  var groupsRound = 'MORNING';
   var lbRound = 'MORNING';
 
   // ----- Leaderboard / Groups DOM refs -----
@@ -41,6 +42,7 @@
   var lbLoadingEl, lbEmptyEl, lbTableWrapEl, lbTbodyEl;
   var lbFullscreenBtn, lbFullscreenOverlay, lbFsRoundEl, lbFsUpdatedEl, lbFsTbodyEl, lbCloseFsBtn;
   var groupsTitleEl, groupsSubtitleEl, groupsLoadingEl, groupsErrorEl, groupsListEl;
+  var groupsRoundMorningBtn, groupsRoundAfternoonBtn;
   var lbRoundMorningBtn, lbRoundAfternoonBtn;
 
   // Monotonic counter so concurrent JSONP requests do not collide.
@@ -516,6 +518,8 @@
     groupsLoadingEl = document.getElementById('scoring-groups-loading');
     groupsErrorEl = document.getElementById('scoring-groups-error');
     groupsListEl = document.getElementById('scoring-groups-list');
+    groupsRoundMorningBtn = document.getElementById('scoring-groups-round-morning');
+    groupsRoundAfternoonBtn = document.getElementById('scoring-groups-round-afternoon');
     lbRoundMorningBtn = document.getElementById('scoring-lb-round-morning');
     lbRoundAfternoonBtn = document.getElementById('scoring-lb-round-afternoon');
 
@@ -531,6 +535,10 @@
     if (lbRoundMorningBtn) lbRoundMorningBtn.addEventListener('click', function () { setLbRound('MORNING'); });
     if (lbRoundAfternoonBtn) lbRoundAfternoonBtn.addEventListener('click', function () { setLbRound('AFTERNOON'); });
     updateLbRoundStyles();
+
+    if (groupsRoundMorningBtn) groupsRoundMorningBtn.addEventListener('click', function () { setGroupsRound('MORNING'); });
+    if (groupsRoundAfternoonBtn) groupsRoundAfternoonBtn.addEventListener('click', function () { setGroupsRound('AFTERNOON'); });
+    updateGroupsRoundStyles();
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && lbFullscreenOpen) closeFullscreen();
@@ -836,13 +844,30 @@
 
   // ---------- Groups ----------
 
+  function setGroupsRound(round) {
+    if (groupsRound === round) return;
+    groupsRound = round;
+    updateGroupsRoundStyles();
+    fetchGroups();
+  }
+
+  function updateGroupsRoundStyles() {
+    [[groupsRoundMorningBtn, 'MORNING'], [groupsRoundAfternoonBtn, 'AFTERNOON']].forEach(function (e) {
+      var b = e[0]; if (!b) return;
+      if (groupsRound === e[1]) { b.classList.add('bg-mscc-red', 'text-white'); b.classList.remove('text-mscc-black/60', 'hover:text-mscc-black'); }
+      else { b.classList.remove('bg-mscc-red', 'text-white'); b.classList.add('text-mscc-black/60', 'hover:text-mscc-black'); }
+    });
+  }
+
   function fetchGroups() {
+    var reqRound = groupsRound;
     // Show loading, hide error and prior list while the request is in flight.
     if (groupsLoadingEl) groupsLoadingEl.classList.remove('hidden');
     if (groupsErrorEl) groupsErrorEl.classList.add('hidden');
     if (groupsListEl) groupsListEl.classList.add('hidden');
 
-    jsonp({ action: 'groups', round: 'MORNING' }, function (data) {
+    jsonp({ action: 'groups', round: groupsRound }, function (data) {
+      if (reqRound !== groupsRound) return;
       if (groupsLoadingEl) groupsLoadingEl.classList.add('hidden');
 
       if (data && data.error === 'Network error' && !data.ok) {
@@ -865,48 +890,54 @@
   function renderGroups() {
     if (!lastGroups || !groupsListEl) return;
 
-    // Header.
     var titleText = lastGroups.round
       ? lastGroups.round.charAt(0) + lastGroups.round.slice(1).toLowerCase() + ' Groups'
       : 'Groups';
     if (groupsTitleEl) groupsTitleEl.textContent = titleText;
 
-    var subText = '';
-    if (lastGroups.count != null) {
-      subText = lastGroups.count + ' groups, shotgun start';
-    }
-    if (groupsSubtitleEl) groupsSubtitleEl.textContent = subText;
+    var allGroups = lastGroups.groups || [];
+    if (groupsSubtitleEl) groupsSubtitleEl.textContent = (lastGroups.count != null) ? (lastGroups.count + ' groups, shotgun start') : '';
 
-    // Bucket groups by start hole, preserving the server's order.
-    var byHole = {};
-    var holesInOrder = [];
-    (lastGroups.groups || []).forEach(function (g) {
+    var hasDivision = allGroups.some(function (g) { return g.division === 'CHAMPIONSHIP' || g.division === 'SCRAMBLE'; });
+
+    if (hasDivision) {
+      var champ = allGroups.filter(function (g) { return g.division === 'CHAMPIONSHIP'; });
+      var scramble = allGroups.filter(function (g) { return g.division === 'SCRAMBLE'; });
+      var html = '';
+      if (champ.length) html += buildDivisionSection('Championship', champ);
+      if (scramble.length) html += buildDivisionSection('Scramble', scramble);
+      groupsListEl.innerHTML = html;
+    } else {
+      groupsListEl.innerHTML = buildHoleBucketsHtml(allGroups);
+    }
+  }
+
+  function buildDivisionSection(label, groups) {
+    return '<div>' +
+      '<h3 class="font-western text-mscc-gold text-xl md:text-2xl mb-4 uppercase tracking-wider">' + escapeHtml(label) + '</h3>' +
+      '<div class="space-y-8">' + buildHoleBucketsHtml(groups) + '</div>' +
+    '</div>';
+  }
+
+  function buildHoleBucketsHtml(groups) {
+    var byHole = {}, holesInOrder = [];
+    groups.forEach(function (g) {
       var h = g.startHole;
       if (h == null) return;
-      if (byHole[h] == null) {
-        byHole[h] = [];
-        holesInOrder.push(h);
-      }
+      if (byHole[h] == null) { byHole[h] = []; holesInOrder.push(h); }
       byHole[h].push(g);
     });
-
     var html = '';
     holesInOrder.forEach(function (h) {
       var groupsForHole = byHole[h];
-      // Multiple groups on the same hole get titled cards (e.g. "1A", "1B")
-      // built from start hole plus position. A solo group on a hole gets no
-      // card title because the "Hole N" heading already identifies it.
       var showLabel = groupsForHole.length > 1;
       html += '<div>' +
         '<h3 class="font-western text-mscc-red text-lg md:text-xl mb-3">Hole ' + escapeHtml(String(h)) + '</h3>' +
         '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">';
-      groupsForHole.forEach(function (g) {
-        html += buildGroupCard(g, showLabel);
-      });
-      html += '</div>' +
-        '</div>';
+      groupsForHole.forEach(function (g) { html += buildGroupCard(g, showLabel); });
+      html += '</div></div>';
     });
-    groupsListEl.innerHTML = html;
+    return html;
   }
 
   function buildGroupCard(g, showLabel) {
