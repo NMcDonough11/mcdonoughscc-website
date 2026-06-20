@@ -1664,13 +1664,13 @@
        LEADERBOARD FULLSCREEN OVERLAY
        ============================================ -->
   <div id="scoring-lb-fullscreen-overlay" class="hidden fixed inset-0 z-50 bg-mscc-black text-mscc-cream overflow-y-auto" role="dialog" aria-modal="true" aria-label="Leaderboard fullscreen">
-    <div class="flex items-start justify-between gap-4 p-6 md:p-10 border-b border-white/10">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 p-6 md:p-10 border-b border-white/10">
       <div class="min-w-0">
         <h1 class="font-western text-3xl md:text-5xl lg:text-6xl text-mscc-red leading-tight">McDonough Stampede</h1>
         <p id="scoring-lb-fs-round" class="font-western text-xl md:text-3xl text-mscc-gold mt-1"></p>
         <p id="scoring-lb-fs-updated" class="text-mscc-cream/60 text-sm md:text-base mt-2"></p>
       </div>
-      <div class="flex items-center gap-3 flex-shrink-0">
+      <div class="flex items-center justify-end gap-3 flex-shrink-0">
         <button id="scoring-lb-autoscroll" type="button" class="bg-white/10 hover:bg-white/20 text-mscc-cream font-semibold rounded-full px-4 py-2 md:px-5 md:py-3 text-xs md:text-sm uppercase tracking-wider transition-colors">Auto Scroll</button>
         <button id="scoring-lb-close-fullscreen" type="button" class="bg-white/10 hover:bg-white/20 text-mscc-cream font-semibold rounded-full w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-colors flex-shrink-0" aria-label="Close fullscreen">
           <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -1682,19 +1682,15 @@
         <colgroup>
           <col class="w-16 md:w-24">
           <col>
-          <col class="w-0 sm:w-16 md:w-24">
           <col class="w-16 md:w-24">
           <col class="w-20 md:w-32">
-          <col class="w-0 sm:w-16 md:w-24">
         </colgroup>
         <thead>
           <tr class="text-mscc-gold font-western text-sm md:text-xl uppercase tracking-[0.2em] border-b-2 border-mscc-gold/30">
             <th class="px-4 py-4 text-center">Pos</th>
             <th class="px-4 py-4 text-left">Player</th>
-            <th class="px-4 py-4 text-center hidden sm:table-cell">Hcp</th>
             <th class="px-4 py-4 text-center">Thru</th>
             <th class="px-4 py-4 text-center">Net</th>
-            <th class="px-4 py-4 text-center hidden sm:table-cell">Mull</th>
           </tr>
         </thead>
         <tbody id="scoring-lb-fs-tbody"></tbody>

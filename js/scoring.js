@@ -796,10 +796,8 @@
         row.innerHTML = '' +
           '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-gold">' + escapeHtml(String(p.pos)) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-left font-semibold text-mscc-cream truncate">' + escapeHtml(p.name || '') + '</td>' +
-          '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream/60 hidden sm:table-cell">' + escapeHtml(hcp) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream">' + escapeHtml(thru) + '</td>' +
-          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(net) + '</td>' +
-          '<td class="px-4 ' + sizeCls + ' text-center hidden sm:table-cell ' + mullCls + '">' + escapeHtml(mullText) + '</td>';
+          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(net) + '</td>';
       } else {
         sizeCls = 'py-3 text-sm';
         row.className = (aboveCut ? 'bg-mscc-gold/10 ' : (belowCut ? 'opacity-60 ' : '')) + 'cursor-pointer';
@@ -826,7 +824,7 @@
         var cutRow = document.createElement('tr');
         var cutText = 'Cut Line. Top ' + cutSize + ' advance.';
         if (large) {
-          cutRow.innerHTML = '<td colspan="6" class="bg-mscc-red text-mscc-cream px-4 py-3 md:py-4 text-center font-western text-base md:text-2xl uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
+          cutRow.innerHTML = '<td colspan="4" class="bg-mscc-red text-mscc-cream px-4 py-3 md:py-4 text-center font-western text-base md:text-2xl uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
         } else {
           cutRow.innerHTML = '<td colspan="6" class="bg-mscc-red text-mscc-cream px-4 py-2 text-center font-western text-xs uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
         }
