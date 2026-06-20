@@ -379,12 +379,14 @@
 
     submitScore(currentCard.code, playerId, currentHole, newStrokes)
       .then(function (data) {
-        if (data && data.ok && data.card) {
-          currentCard = data.card;
-          delete errorByPlayer[playerId];
-          delete pendingRetry[playerId];
-          renderEntryPanel();
-          renderOverview();
+        if (data && data.ok) {
+          // Successful save. Keep the optimistic value already applied to
+          // currentCard locally. Do NOT replace currentCard with data.card,
+          // because concurrent saves can race: a slower save's response may
+          // not include a faster save's tap, which would briefly clear that
+          // selection and cause a flicker. Pending and error state for this
+          // player were cleared at the start of this handler, so the visible
+          // state is already correct.
           return;
         }
         // Server rejected. Revert and surface the message.
@@ -412,11 +414,10 @@
 
     submitScore(currentCard.code, playerId, pending.hole, pending.strokes)
       .then(function (data) {
-        if (data && data.ok && data.card) {
-          currentCard = data.card;
-          delete errorByPlayer[playerId];
-          renderEntryPanel();
-          renderOverview();
+        if (data && data.ok) {
+          // Successful save. Keep the optimistic value. See onScoreTap for why.
+          // The pending retry indicator was already cleared at the top of
+          // retryWrite, so the visible state is already correct.
           return;
         }
         var msg = (data && data.error) ? data.error : 'Score rejected.';
