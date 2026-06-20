@@ -861,11 +861,16 @@
 
     var html = '';
     holesInOrder.forEach(function (h) {
+      var groupsForHole = byHole[h];
+      // Multiple groups on the same hole get titled cards (e.g. "1A", "1B")
+      // built from start hole plus position. A solo group on a hole gets no
+      // card title because the "Hole N" heading already identifies it.
+      var showLabel = groupsForHole.length > 1;
       html += '<div>' +
         '<h3 class="font-western text-mscc-red text-lg md:text-xl mb-3">Hole ' + escapeHtml(String(h)) + '</h3>' +
         '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">';
-      byHole[h].forEach(function (g) {
-        html += buildGroupCard(g);
+      groupsForHole.forEach(function (g) {
+        html += buildGroupCard(g, showLabel);
       });
       html += '</div>' +
         '</div>';
@@ -873,7 +878,7 @@
     groupsListEl.innerHTML = html;
   }
 
-  function buildGroupCard(g) {
+  function buildGroupCard(g, showLabel) {
     var members = g.members || [];
     var memberHtml = '';
     members.forEach(function (m) {
@@ -883,8 +888,21 @@
         '<span class="text-mscc-black/50 text-xs uppercase tracking-wider whitespace-nowrap">Hcp ' + escapeHtml(hcp) + '</span>' +
         '</li>';
     });
+
+    // Card label is start hole + position (e.g. "1A"), only shown for holes
+    // with multiple groups. The feed has no group code; do not invent one.
+    var labelHtml = '';
+    if (showLabel) {
+      var hole = (g.startHole != null) ? String(g.startHole) : '';
+      var pos = (g.position != null) ? String(g.position) : '';
+      var label = hole + pos;
+      if (label !== '') {
+        labelHtml = '<h4 class="font-western text-2xl text-mscc-red mb-3">' + escapeHtml(label) + '</h4>';
+      }
+    }
+
     return '<div class="bg-mscc-cream rounded-2xl p-5 border border-mscc-black/5 shadow-sm">' +
-      '<h4 class="font-western text-2xl text-mscc-red mb-3">' + escapeHtml(g.code || '') + '</h4>' +
+      labelHtml +
       '<ul class="space-y-1.5">' + memberHtml + '</ul>' +
       '</div>';
   }
