@@ -790,7 +790,7 @@
       var mullCls;
 
       if (large) {
-        sizeCls = 'py-4 md:py-5 text-xl md:text-3xl';
+        sizeCls = 'py-4 md:py-5 text-base sm:text-xl md:text-3xl lg:text-4xl';
         row.className = (aboveCut ? 'bg-white/5 ' : (belowCut ? 'opacity-50 ' : '')) + 'border-b border-white/10';
         mullCls = mullCount === 0 ? 'text-mscc-cream/20' : 'text-mscc-gold font-bold';
         row.innerHTML = '' +
@@ -852,6 +852,7 @@
     var row = document.createElement('tr');
     row.className = 'bg-mscc-cream/60';
     row.innerHTML = '<td colspan="6" class="px-3 py-4">' +
+      '<div class="font-western text-mscc-red text-lg md:text-xl mb-3">' + escapeHtml(p.name || '') + '</div>' +
       '<div class="space-y-3">' +
         buildNineStrip('Out', scores, holeMulligans, 1, 9) +
         buildNineStrip('In', scores, holeMulligans, 10, 18) +
