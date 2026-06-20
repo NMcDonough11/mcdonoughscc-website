@@ -36,6 +36,8 @@
   var lastGroups = null;               // last server payload (groups)
   var groupsRound = 'MORNING';
   var lbRound = 'MORNING';
+  var autoScrollInterval = null;
+  var autoScrollActive = false;
 
   // ----- Leaderboard / Groups DOM refs -----
   var tabEnterBtn, tabLbBtn, tabGroupsBtn;
@@ -46,6 +48,7 @@
   var groupsTitleEl, groupsSubtitleEl, groupsLoadingEl, groupsErrorEl, groupsListEl;
   var groupsRoundMorningBtn, groupsRoundAfternoonBtn;
   var lbRoundMorningBtn, lbRoundAfternoonBtn;
+  var lbAutoScrollBtn;
 
   // Monotonic counter so concurrent JSONP requests do not collide.
   var jsonpCounter = 0;
@@ -592,6 +595,7 @@
     groupsRoundAfternoonBtn = document.getElementById('scoring-groups-round-afternoon');
     lbRoundMorningBtn = document.getElementById('scoring-lb-round-morning');
     lbRoundAfternoonBtn = document.getElementById('scoring-lb-round-afternoon');
+    lbAutoScrollBtn = document.getElementById('scoring-lb-autoscroll');
 
     if (!tabEnterBtn || !tabLbBtn) return;
 
@@ -601,6 +605,7 @@
 
     if (lbFullscreenBtn) lbFullscreenBtn.addEventListener('click', openFullscreen);
     if (lbCloseFsBtn) lbCloseFsBtn.addEventListener('click', closeFullscreen);
+    if (lbAutoScrollBtn) lbAutoScrollBtn.addEventListener('click', toggleAutoScroll);
 
     if (lbRoundMorningBtn) lbRoundMorningBtn.addEventListener('click', function () { setLbRound('MORNING'); });
     if (lbRoundAfternoonBtn) lbRoundAfternoonBtn.addEventListener('click', function () { setLbRound('AFTERNOON'); });
@@ -791,10 +796,10 @@
         row.innerHTML = '' +
           '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-gold">' + escapeHtml(String(p.pos)) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-left font-semibold text-mscc-cream truncate">' + escapeHtml(p.name || '') + '</td>' +
-          '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream/60">' + escapeHtml(hcp) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream/60 hidden sm:table-cell">' + escapeHtml(hcp) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream">' + escapeHtml(thru) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(net) + '</td>' +
-          '<td class="px-4 ' + sizeCls + ' text-center ' + mullCls + '">' + escapeHtml(mullText) + '</td>';
+          '<td class="px-4 ' + sizeCls + ' text-center hidden sm:table-cell ' + mullCls + '">' + escapeHtml(mullText) + '</td>';
       } else {
         sizeCls = 'py-3 text-sm';
         row.className = (aboveCut ? 'bg-mscc-gold/10 ' : (belowCut ? 'opacity-60 ' : '')) + 'cursor-pointer';
@@ -922,10 +927,52 @@
   }
 
   function closeFullscreen() {
+    stopAutoScroll();
     if (!lbFullscreenOverlay) return;
     lbFullscreenOpen = false;
     lbFullscreenOverlay.classList.add('hidden');
     document.body.style.overflow = '';
+  }
+
+  function toggleAutoScroll() {
+    if (autoScrollActive) stopAutoScroll();
+    else startAutoScroll();
+  }
+
+  function startAutoScroll() {
+    if (!lbFullscreenOverlay || autoScrollInterval !== null) return;
+    autoScrollActive = true;
+    updateAutoScrollBtn();
+    var pausedUntil = 0;
+    autoScrollInterval = setInterval(function () {
+      if (!lbFullscreenOpen) { stopAutoScroll(); return; }
+      if (Date.now() < pausedUntil) return;
+      var el = lbFullscreenOverlay;
+      if ((el.scrollTop + el.clientHeight) >= (el.scrollHeight - 2)) {
+        el.scrollTop = 0;
+        pausedUntil = Date.now() + 2500;
+      } else {
+        el.scrollTop += 1;
+      }
+    }, 25);
+  }
+
+  function stopAutoScroll() {
+    if (autoScrollInterval !== null) { clearInterval(autoScrollInterval); autoScrollInterval = null; }
+    autoScrollActive = false;
+    updateAutoScrollBtn();
+  }
+
+  function updateAutoScrollBtn() {
+    if (!lbAutoScrollBtn) return;
+    lbAutoScrollBtn.textContent = autoScrollActive ? 'Stop' : 'Auto Scroll';
+    if (autoScrollActive) {
+      lbAutoScrollBtn.classList.add('bg-mscc-gold', 'text-mscc-black');
+      lbAutoScrollBtn.classList.remove('bg-white/10', 'text-mscc-cream');
+    } else {
+      lbAutoScrollBtn.classList.remove('bg-mscc-gold', 'text-mscc-black');
+      lbAutoScrollBtn.classList.add('bg-white/10', 'text-mscc-cream');
+    }
   }
 
   // ---------- Groups ----------

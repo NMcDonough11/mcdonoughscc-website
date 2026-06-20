@@ -1670,28 +1670,31 @@
         <p id="scoring-lb-fs-round" class="font-western text-xl md:text-3xl text-mscc-gold mt-1"></p>
         <p id="scoring-lb-fs-updated" class="text-mscc-cream/60 text-sm md:text-base mt-2"></p>
       </div>
-      <button id="scoring-lb-close-fullscreen" type="button" class="bg-white/10 hover:bg-white/20 text-mscc-cream font-semibold rounded-full w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-colors flex-shrink-0" aria-label="Close fullscreen">
-        <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-      </button>
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <button id="scoring-lb-autoscroll" type="button" class="bg-white/10 hover:bg-white/20 text-mscc-cream font-semibold rounded-full px-4 py-2 md:px-5 md:py-3 text-xs md:text-sm uppercase tracking-wider transition-colors">Auto Scroll</button>
+        <button id="scoring-lb-close-fullscreen" type="button" class="bg-white/10 hover:bg-white/20 text-mscc-cream font-semibold rounded-full w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-colors flex-shrink-0" aria-label="Close fullscreen">
+          <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
     <div class="px-6 md:px-10 pb-10">
       <table class="w-full table-fixed">
         <colgroup>
           <col class="w-16 md:w-24">
           <col>
-          <col class="w-16 md:w-24">
+          <col class="w-0 sm:w-16 md:w-24">
           <col class="w-16 md:w-24">
           <col class="w-20 md:w-32">
-          <col class="w-16 md:w-24">
+          <col class="w-0 sm:w-16 md:w-24">
         </colgroup>
         <thead>
           <tr class="text-mscc-gold font-western text-sm md:text-xl uppercase tracking-[0.2em] border-b-2 border-mscc-gold/30">
             <th class="px-4 py-4 text-center">Pos</th>
             <th class="px-4 py-4 text-left">Player</th>
-            <th class="px-4 py-4 text-center">Hcp</th>
+            <th class="px-4 py-4 text-center hidden sm:table-cell">Hcp</th>
             <th class="px-4 py-4 text-center">Thru</th>
             <th class="px-4 py-4 text-center">Net</th>
-            <th class="px-4 py-4 text-center">Mull</th>
+            <th class="px-4 py-4 text-center hidden sm:table-cell">Mull</th>
           </tr>
         </thead>
         <tbody id="scoring-lb-fs-tbody"></tbody>
