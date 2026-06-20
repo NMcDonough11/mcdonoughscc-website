@@ -32,6 +32,7 @@
   var lbFullscreenOpen = false;
   var expandedPlayerId = null;         // playerId of the in-tab row that's expanded
   var lastGroups = null;               // last server payload (groups)
+  var lbRound = 'MORNING';
 
   // ----- Leaderboard / Groups DOM refs -----
   var tabEnterBtn, tabLbBtn, tabGroupsBtn;
@@ -40,6 +41,7 @@
   var lbLoadingEl, lbEmptyEl, lbTableWrapEl, lbTbodyEl;
   var lbFullscreenBtn, lbFullscreenOverlay, lbFsRoundEl, lbFsUpdatedEl, lbFsTbodyEl, lbCloseFsBtn;
   var groupsTitleEl, groupsSubtitleEl, groupsLoadingEl, groupsErrorEl, groupsListEl;
+  var lbRoundMorningBtn, lbRoundAfternoonBtn;
 
   // Monotonic counter so concurrent JSONP requests do not collide.
   var jsonpCounter = 0;
@@ -514,6 +516,8 @@
     groupsLoadingEl = document.getElementById('scoring-groups-loading');
     groupsErrorEl = document.getElementById('scoring-groups-error');
     groupsListEl = document.getElementById('scoring-groups-list');
+    lbRoundMorningBtn = document.getElementById('scoring-lb-round-morning');
+    lbRoundAfternoonBtn = document.getElementById('scoring-lb-round-afternoon');
 
     if (!tabEnterBtn || !tabLbBtn) return;
 
@@ -523,6 +527,10 @@
 
     if (lbFullscreenBtn) lbFullscreenBtn.addEventListener('click', openFullscreen);
     if (lbCloseFsBtn) lbCloseFsBtn.addEventListener('click', closeFullscreen);
+
+    if (lbRoundMorningBtn) lbRoundMorningBtn.addEventListener('click', function () { setLbRound('MORNING'); });
+    if (lbRoundAfternoonBtn) lbRoundAfternoonBtn.addEventListener('click', function () { setLbRound('AFTERNOON'); });
+    updateLbRoundStyles();
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && lbFullscreenOpen) closeFullscreen();
@@ -586,6 +594,27 @@
     });
   }
 
+  function setLbRound(round) {
+    if (lbRound === round) return;
+    lbRound = round;
+    expandedPlayerId = null;
+    updateLbRoundStyles();
+    lastLeaderboard = null;
+    if (lbLoadingEl) lbLoadingEl.classList.remove('hidden');
+    if (lbEmptyEl) lbEmptyEl.classList.add('hidden');
+    if (lbTableWrapEl) lbTableWrapEl.classList.add('hidden');
+    if (lbFullscreenBtn) lbFullscreenBtn.classList.add('hidden');
+    fetchLeaderboard();
+  }
+
+  function updateLbRoundStyles() {
+    [[lbRoundMorningBtn, 'MORNING'], [lbRoundAfternoonBtn, 'AFTERNOON']].forEach(function (e) {
+      var b = e[0]; if (!b) return;
+      if (lbRound === e[1]) { b.classList.add('bg-mscc-red', 'text-white'); b.classList.remove('text-mscc-black/60', 'hover:text-mscc-black'); }
+      else { b.classList.remove('bg-mscc-red', 'text-white'); b.classList.add('text-mscc-black/60', 'hover:text-mscc-black'); }
+    });
+  }
+
   function startLbPolling() {
     if (lbPollingInterval !== null) return;
     fetchLeaderboard();
@@ -600,7 +629,9 @@
   }
 
   function fetchLeaderboard() {
-    jsonp({ action: 'leaderboard' }, function (data) {
+    var reqRound = lbRound;
+    jsonp({ action: 'leaderboard', round: lbRound }, function (data) {
+      if (reqRound !== lbRound) return;
       if (data && data.error === 'Network error' && !data.ok) {
         console.warn('Leaderboard jsonp network error');
         return;
@@ -624,9 +655,9 @@
       if (players[i].started === true) { anyStarted = true; break; }
     }
 
-    var roundText = lastLeaderboard.round
-      ? lastLeaderboard.round.charAt(0) + lastLeaderboard.round.slice(1).toLowerCase() + ' Leaderboard'
-      : 'Leaderboard';
+    var roundText;
+    if (lastLeaderboard.round === 'AFTERNOON') { roundText = 'Championship'; }
+    else { roundText = 'Morning Leaderboard'; }
     if (lbRoundEl) lbRoundEl.textContent = roundText;
     if (lbFsRoundEl) lbFsRoundEl.textContent = roundText;
 
@@ -656,7 +687,7 @@
     if (!tbodyEl || !lastLeaderboard) return;
     var players = lastLeaderboard.players || [];
     var cutSize = lastLeaderboard.cutSize || 0;
-    var hasCutLine = cutSize > 0 && players.length > cutSize;
+    var hasCutLine = (lbRound === 'MORNING') && cutSize > 0 && players.length > cutSize;
 
     tbodyEl.innerHTML = '';
     players.forEach(function (p) {
