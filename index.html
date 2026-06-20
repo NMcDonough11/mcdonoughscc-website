@@ -800,41 +800,44 @@
             </p>
           </div>
 
-          <!-- Scorecard -->
+          <!-- Entry Panel -->
+          <div class="mb-10">
+
+            <!-- Hole Navigator -->
+            <div class="bg-mscc-black rounded-2xl px-4 py-5 md:p-6 flex items-center justify-between gap-3 shadow-md mb-5">
+              <button id="scoring-prev-hole" type="button" class="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors flex-shrink-0 active:scale-95" aria-label="Previous hole">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+              </button>
+              <div class="text-center flex-1 min-w-0">
+                <span class="text-mscc-gold font-western text-xs uppercase tracking-[0.2em] block">Now Scoring</span>
+                <h3 class="font-western text-3xl md:text-4xl text-mscc-cream mt-1">
+                  Hole <span id="scoring-current-hole">--</span>
+                </h3>
+                <p class="text-white/60 text-sm mt-1">Par <span id="scoring-current-par">--</span></p>
+              </div>
+              <button id="scoring-next-hole" type="button" class="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors flex-shrink-0 active:scale-95" aria-label="Next hole">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            </div>
+
+            <!-- Players list (JS-rendered) -->
+            <div id="scoring-players-list" class="space-y-3"></div>
+
+          </div>
+
+          <!-- Overview Table -->
+          <h3 class="font-western text-xl md:text-2xl text-mscc-red text-center mb-4">Round Overview</h3>
           <div class="bg-white rounded-2xl shadow-md border border-mscc-black/5 overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
                 <thead class="bg-mscc-black text-white">
-                  <tr>
-                    <th class="sticky left-0 bg-mscc-black px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs z-10 whitespace-nowrap">Player</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">Hcp</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">1</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">2</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">3</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">4</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">5</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">6</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">7</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">8</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">9</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">10</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">11</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">12</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">13</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">14</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">15</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">16</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">17</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">18</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs bg-mscc-red">Total</th>
-                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">Thru</th>
-                  </tr>
+                  <tr id="scoring-overview-thead-row"></tr>
                 </thead>
                 <tbody id="scoring-tbody" class="divide-y divide-mscc-black/5"></tbody>
               </table>
             </div>
             <div class="px-4 py-2 bg-mscc-cream/50 text-xs text-mscc-black/50 text-center border-t border-mscc-black/5">
-              Swipe to see all 18 holes &mdash; this is a view-only scorecard.
+              Swipe to see all 18 holes. Tap scores above to edit.
             </div>
           </div>
 
