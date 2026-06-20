@@ -12,6 +12,8 @@
 
   var PAR_BY_HOLE = {1:4,2:4,3:5,4:4,5:3,6:4,7:4,8:3,9:5,10:3,11:4,12:4,13:4,14:4,15:4,16:3,17:5,18:4};
 
+  var TEAM_KEY = '__team__';
+
   // State
   var currentCard = null;            // last server-confirmed (or optimistic) card
   var holeConfig = {};               // hole number -> { par, maxPerHole }
@@ -250,6 +252,8 @@
     currentParEl.textContent = (cfg && cfg.par != null) ? cfg.par : '--';
     var maxBtns = (cfg && cfg.maxPerHole) ? cfg.maxPerHole : DEFAULT_MAX_PER_HOLE;
 
+    if (currentCard.scramble) { renderTeamEntryPanel(maxBtns); return; }
+
     playersList.innerHTML = '';
     var members = currentCard.members || [];
     members.forEach(function (player) {
@@ -351,8 +355,69 @@
     });
   }
 
+  function renderTeamEntryPanel(maxBtns) {
+    playersList.innerHTML = '';
+    var members = currentCard.members || [];
+    var scores = currentCard.teamScores || {};
+    var currentScoreRaw = scores[String(currentHole)];
+    var currentScoreNum = (currentScoreRaw != null && currentScoreRaw !== '')
+      ? parseInt(currentScoreRaw, 10) : null;
+
+    var err = errorByPlayer[TEAM_KEY];
+    var hasErrorHere = err && err.hole === currentHole;
+    var retry = pendingRetry[TEAM_KEY];
+    var hasRetryHere = retry && retry.hole === currentHole;
+
+    var namesLine = members.map(function (m) { return m.name || ''; }).join(', ');
+
+    var row = document.createElement('div');
+    row.className = 'bg-white rounded-2xl p-4 md:p-5 shadow-md border border-mscc-black/5';
+
+    var html = '' +
+      '<div class="flex items-center justify-between mb-1 gap-3">' +
+        '<h4 class="font-semibold text-mscc-black">Team Score</h4>' +
+        '<span class="text-mscc-black/50 text-xs uppercase tracking-wider whitespace-nowrap">Scramble</span>' +
+      '</div>' +
+      '<div class="text-mscc-black/60 text-sm mb-3">' + escapeHtml(namesLine) + '</div>';
+
+    html += '<div class="flex flex-wrap gap-2">';
+    for (var s = 1; s <= maxBtns; s++) {
+      var isSelected = (currentScoreNum === s);
+      var base = 'w-12 h-12 rounded-lg font-bold text-lg transition-colors border-2 active:scale-95 ';
+      var skin = isSelected
+        ? 'bg-mscc-red text-white border-mscc-red'
+        : 'bg-mscc-cream text-mscc-black border-mscc-black/10 hover:border-mscc-red';
+      html += '<button type="button" data-team-strokes="' + s + '" class="team-score-btn ' + base + skin +
+        '" aria-pressed="' + (isSelected ? 'true' : 'false') + '">' + s + '</button>';
+    }
+    html += '</div>';
+
+    if (hasErrorHere) {
+      html += '<p class="mt-3 text-mscc-red text-xs font-semibold">' + escapeHtml(err.message) + '</p>';
+    } else if (hasRetryHere) {
+      html += '<button type="button" data-team-retry="1" class="mt-3 inline-flex items-center gap-1.5 text-mscc-red text-xs font-semibold hover:underline active:scale-95">' +
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>' +
+        "Didn't save. Tap to retry." +
+        '</button>';
+    }
+
+    row.innerHTML = html;
+    playersList.appendChild(row);
+
+    playersList.querySelectorAll('.team-score-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var strokes = parseInt(b.getAttribute('data-team-strokes'), 10);
+        onTeamScoreTap(strokes);
+      });
+    });
+    var retryBtn = playersList.querySelector('[data-team-retry]');
+    if (retryBtn) retryBtn.addEventListener('click', onTeamRetry);
+  }
+
   function renderOverview() {
     if (!currentCard || !theadRow || !tbody) return;
+
+    if (currentCard.scramble) { renderTeamOverview(); return; }
 
     var thBase = 'px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs';
 
@@ -409,6 +474,39 @@
       row.innerHTML = cells;
       tbody.appendChild(row);
     });
+  }
+
+  function renderTeamOverview() {
+    var thBase = 'px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs';
+    var thead = '<th class="sticky left-0 bg-mscc-black px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs z-10 whitespace-nowrap">Team</th>';
+    for (var h = 1; h <= 18; h++) {
+      var cls = thBase + (h === currentHole ? ' bg-mscc-gold text-mscc-black' : '');
+      thead += '<th class="' + cls + '">' + h + '</th>';
+    }
+    thead += '<th class="' + thBase + ' bg-mscc-red">Total</th>';
+    thead += '<th class="' + thBase + '">Thru</th>';
+    theadRow.innerHTML = thead;
+
+    tbody.innerHTML = '';
+    var scores = currentCard.teamScores || {};
+    var names = (currentCard.members || []).map(function (m) { return m.name || ''; }).join(', ');
+
+    var row = document.createElement('tr');
+    row.className = 'hover:bg-mscc-cream/30';
+    var cells = '<td class="sticky left-0 bg-white px-4 py-3 font-semibold text-mscc-black whitespace-nowrap z-10 border-r border-mscc-black/5">' + escapeHtml(names) + '</td>';
+
+    var total = 0, thru = 0;
+    for (var h2 = 1; h2 <= 18; h2++) {
+      var sc = scores[String(h2)];
+      var val = (sc != null && sc !== '') ? escapeHtml(String(sc)) : '';
+      if (sc != null && sc !== '') { total += parseInt(sc, 10) || 0; thru++; }
+      var cellCls = 'px-3 py-3 text-center text-mscc-black' + (h2 === currentHole ? ' bg-mscc-gold/15 font-semibold' : '');
+      cells += '<td class="' + cellCls + '">' + val + '</td>';
+    }
+    cells += '<td class="px-3 py-3 text-center font-bold text-mscc-red bg-mscc-red/5">' + total + '</td>';
+    cells += '<td class="px-3 py-3 text-center text-mscc-black/60">' + thru + '</td>';
+    row.innerHTML = cells;
+    tbody.appendChild(row);
   }
 
   // ---------- Score entry ----------
@@ -538,6 +636,59 @@
       .catch(function (err) {
         console.warn('retry error:', err);
         pendingRetry[playerId] = pending;
+        renderEntryPanel();
+      });
+  }
+
+  function onTeamScoreTap(strokes) {
+    if (!currentCard) return;
+    if (!currentCard.teamScores) currentCard.teamScores = {};
+    var existingRaw = currentCard.teamScores[String(currentHole)];
+    var existingNum = (existingRaw != null && existingRaw !== '') ? parseInt(existingRaw, 10) : null;
+    var newStrokes = (existingNum === strokes) ? CLEAR_STROKES : strokes;
+    var snapshot = existingRaw;
+
+    applyLocalTeamScore(currentHole, newStrokes);
+    delete errorByPlayer[TEAM_KEY];
+    delete pendingRetry[TEAM_KEY];
+    renderEntryPanel();
+    renderOverview();
+
+    submitScore(currentCard.code, '', currentHole, newStrokes, 0)
+      .then(function (data) {
+        if (data && data.ok) return;
+        revertTeamScore(currentHole, snapshot);
+        var msg = (data && data.error) ? data.error : 'Score rejected.';
+        errorByPlayer[TEAM_KEY] = { hole: currentHole, message: msg };
+        renderEntryPanel();
+        renderOverview();
+      })
+      .catch(function (err) {
+        console.warn('team submitScore error:', err);
+        pendingRetry[TEAM_KEY] = { hole: currentHole, strokes: newStrokes };
+        renderEntryPanel();
+      });
+  }
+
+  function onTeamRetry() {
+    if (!currentCard) return;
+    var pending = pendingRetry[TEAM_KEY];
+    if (!pending) return;
+    delete pendingRetry[TEAM_KEY];
+    renderEntryPanel();
+
+    submitScore(currentCard.code, '', pending.hole, pending.strokes, 0)
+      .then(function (data) {
+        if (data && data.ok) return;
+        var msg = (data && data.error) ? data.error : 'Score rejected.';
+        applyLocalTeamScore(pending.hole, CLEAR_STROKES);
+        errorByPlayer[TEAM_KEY] = { hole: pending.hole, message: msg };
+        renderEntryPanel();
+        renderOverview();
+      })
+      .catch(function (err) {
+        console.warn('team retry error:', err);
+        pendingRetry[TEAM_KEY] = pending;
         renderEntryPanel();
       });
   }
@@ -1138,6 +1289,18 @@
     var netToPar = thru > 0 ? (total - parPlayed) - hcp * thru / 18 : 0;
     player.netToPar = netToPar;
     player.netDisplay = Math.round(netToPar);
+  }
+
+  function applyLocalTeamScore(hole, strokes) {
+    if (!currentCard.teamScores) currentCard.teamScores = {};
+    if (strokes === CLEAR_STROKES) delete currentCard.teamScores[String(hole)];
+    else currentCard.teamScores[String(hole)] = strokes;
+  }
+
+  function revertTeamScore(hole, snapshot) {
+    if (!currentCard.teamScores) currentCard.teamScores = {};
+    if (snapshot != null && snapshot !== '') currentCard.teamScores[String(hole)] = snapshot;
+    else delete currentCard.teamScores[String(hole)];
   }
 
   function findPlayer(playerId) {
