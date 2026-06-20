@@ -30,6 +30,7 @@
   var lastLeaderboard = null;          // last server payload
   var lastLeaderboardAt = null;        // Date of last successful fetch
   var lbFullscreenOpen = false;
+  var expandedPlayerId = null;         // playerId of the in-tab row that's expanded
 
   // ----- Leaderboard DOM refs -----
   var tabEnterBtn, tabLbBtn;
@@ -628,41 +629,104 @@
       var thru = (p.started === false) ? '-' : String(p.thru != null ? p.thru : 0);
       var hcp = (p.handicap != null && p.handicap !== '') ? String(p.handicap) : '-';
 
+      var mullCount = parseInt(p.mulligans, 10);
+      if (isNaN(mullCount)) mullCount = 0;
+      var mullText = mullCount === 0 ? '-' : String(mullCount);
+
       var row = document.createElement('tr');
       var sizeCls;
+      var mullCls;
 
       if (large) {
         sizeCls = 'py-4 md:py-5 text-xl md:text-3xl';
         row.className = (aboveCut ? 'bg-white/5 ' : (belowCut ? 'opacity-50 ' : '')) + 'border-b border-white/10';
+        mullCls = mullCount === 0 ? 'text-mscc-cream/20' : 'text-mscc-gold font-bold';
         row.innerHTML = '' +
           '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-gold">' + escapeHtml(String(p.pos)) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-left font-semibold text-mscc-cream truncate">' + escapeHtml(p.name || '') + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream/60">' + escapeHtml(hcp) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream">' + escapeHtml(thru) + '</td>' +
-          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(net) + '</td>';
+          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(net) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center ' + mullCls + '">' + escapeHtml(mullText) + '</td>';
       } else {
         sizeCls = 'py-3 text-sm';
-        row.className = aboveCut ? 'bg-mscc-gold/10' : (belowCut ? 'opacity-60' : '');
+        row.className = (aboveCut ? 'bg-mscc-gold/10 ' : (belowCut ? 'opacity-60 ' : '')) + 'cursor-pointer';
+        if (p.playerId) row.setAttribute('data-lb-player-id', p.playerId);
+        mullCls = mullCount === 0 ? 'text-mscc-black/20' : 'text-mscc-gold font-bold';
         row.innerHTML = '' +
           '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-black">' + escapeHtml(String(p.pos)) + '</td>' +
           '<td class="px-3 ' + sizeCls + ' font-semibold text-mscc-black truncate">' + escapeHtml(p.name || '') + '</td>' +
           '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black/60">' + escapeHtml(hcp) + '</td>' +
           '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black">' + escapeHtml(thru) + '</td>' +
-          '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-red bg-mscc-red/5">' + escapeHtml(net) + '</td>';
+          '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-red bg-mscc-red/5">' + escapeHtml(net) + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center ' + mullCls + '">' + escapeHtml(mullText) + '</td>';
       }
       tbodyEl.appendChild(row);
+
+      // In-tab table only: render the expanded scorecard panel for the
+      // currently-expanded player directly under their row. Persists across
+      // 30s poll refreshes because expandedPlayerId is module-level state.
+      if (!large && p.playerId && expandedPlayerId === p.playerId) {
+        tbodyEl.appendChild(buildExpandedRow(p));
+      }
 
       if (hasCutLine && p.pos === cutSize) {
         var cutRow = document.createElement('tr');
         var cutText = 'Cut Line. Top ' + cutSize + ' advance.';
         if (large) {
-          cutRow.innerHTML = '<td colspan="5" class="bg-mscc-red text-mscc-cream px-4 py-3 md:py-4 text-center font-western text-base md:text-2xl uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
+          cutRow.innerHTML = '<td colspan="6" class="bg-mscc-red text-mscc-cream px-4 py-3 md:py-4 text-center font-western text-base md:text-2xl uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
         } else {
-          cutRow.innerHTML = '<td colspan="5" class="bg-mscc-red text-mscc-cream px-4 py-2 text-center font-western text-xs uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
+          cutRow.innerHTML = '<td colspan="6" class="bg-mscc-red text-mscc-cream px-4 py-2 text-center font-western text-xs uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
         }
         tbodyEl.appendChild(cutRow);
       }
     });
+
+    // Wire row clicks for the in-tab table only. The clubhouse fullscreen
+    // view stays read-only.
+    if (!large) {
+      tbodyEl.querySelectorAll('tr[data-lb-player-id]').forEach(function (r) {
+        r.addEventListener('click', function () {
+          var pid = r.getAttribute('data-lb-player-id');
+          if (!pid) return;
+          expandedPlayerId = (expandedPlayerId === pid) ? null : pid;
+          renderLeaderboardRows(lbTbodyEl, false);
+        });
+      });
+    }
+  }
+
+  function buildExpandedRow(p) {
+    var scores = p.scores || {};
+    var holeMulligans = p.holeMulligans || {};
+    var row = document.createElement('tr');
+    row.className = 'bg-mscc-cream/60';
+    row.innerHTML = '<td colspan="6" class="px-3 py-4">' +
+      '<div class="space-y-3">' +
+        buildNineStrip('Out', scores, holeMulligans, 1, 9) +
+        buildNineStrip('In', scores, holeMulligans, 10, 18) +
+      '</div>' +
+    '</td>';
+    return row;
+  }
+
+  function buildNineStrip(label, scores, holeMulligans, startHole, endHole) {
+    var cells = '';
+    for (var h = startHole; h <= endHole; h++) {
+      var stroke = scores[String(h)];
+      var strokeText = (stroke != null && stroke !== '') ? escapeHtml(String(stroke)) : '&nbsp;';
+      var mull = parseInt(holeMulligans[String(h)], 10);
+      var mullText = (!isNaN(mull) && mull > 0) ? escapeHtml(String(mull)) : '&nbsp;';
+      cells += '<div class="bg-white rounded px-1 py-2 text-center">' +
+        '<div class="text-xs text-mscc-black/50 leading-none">' + h + '</div>' +
+        '<div class="text-base font-semibold text-mscc-black leading-tight mt-1">' + strokeText + '</div>' +
+        '<div class="text-xs text-mscc-gold font-bold leading-none mt-1">' + mullText + '</div>' +
+        '</div>';
+    }
+    return '<div>' +
+      '<div class="text-mscc-black/40 text-xs uppercase tracking-widest font-semibold mb-1.5">' + label + '</div>' +
+      '<div class="grid grid-cols-9 gap-1">' + cells + '</div>' +
+    '</div>';
   }
 
   function formatNet(p) {
