@@ -24,20 +24,22 @@
   // DOM refs (overview table)
   var theadRow, tbody;
 
-  // ----- Leaderboard state -----
-  var lbView = 'enter';                // 'enter' | 'leaderboard'
+  // ----- Leaderboard / Groups state -----
+  var lbView = 'enter';                // 'enter' | 'leaderboard' | 'groups'
   var lbPollingInterval = null;        // setInterval handle while polling
-  var lastLeaderboard = null;          // last server payload
-  var lastLeaderboardAt = null;        // Date of last successful fetch
+  var lastLeaderboard = null;          // last server payload (leaderboard)
+  var lastLeaderboardAt = null;        // Date of last successful leaderboard fetch
   var lbFullscreenOpen = false;
   var expandedPlayerId = null;         // playerId of the in-tab row that's expanded
+  var lastGroups = null;               // last server payload (groups)
 
-  // ----- Leaderboard DOM refs -----
-  var tabEnterBtn, tabLbBtn;
-  var enterViewEl, lbViewEl;
+  // ----- Leaderboard / Groups DOM refs -----
+  var tabEnterBtn, tabLbBtn, tabGroupsBtn;
+  var enterViewEl, lbViewEl, groupsViewEl;
   var lbRoundEl, lbUpdatedEl;
   var lbLoadingEl, lbEmptyEl, lbTableWrapEl, lbTbodyEl;
   var lbFullscreenBtn, lbFullscreenOverlay, lbFsRoundEl, lbFsUpdatedEl, lbFsTbodyEl, lbCloseFsBtn;
+  var groupsTitleEl, groupsSubtitleEl, groupsLoadingEl, groupsErrorEl, groupsListEl;
 
   // Monotonic counter so concurrent JSONP requests do not collide.
   var jsonpCounter = 0;
@@ -329,6 +331,7 @@
     }
     thead += '<th class="' + thBase + ' bg-mscc-red">Total</th>';
     thead += '<th class="' + thBase + '">Thru</th>';
+    thead += '<th class="' + thBase + '">Net</th>';
     theadRow.innerHTML = thead;
 
     tbody.innerHTML = '';
@@ -360,6 +363,14 @@
         (player.total != null ? escapeHtml(String(player.total)) : '0') + '</td>';
       cells += '<td class="px-3 py-3 text-center text-mscc-black/60">' +
         (player.thru != null ? escapeHtml(String(player.thru)) : '0') + '</td>';
+
+      // Net: use the value from the card (netDisplay), no client recompute.
+      // Show a dash for players who have not played a hole yet.
+      var thruNum = parseInt(player.thru, 10);
+      if (isNaN(thruNum)) thruNum = 0;
+      var netText = (thruNum === 0) ? '-' : formatNet(player);
+      cells += '<td class="px-3 py-3 text-center font-bold text-mscc-red">' +
+        escapeHtml(netText) + '</td>';
 
       row.innerHTML = cells;
       tbody.appendChild(row);
@@ -482,8 +493,10 @@
   function initLeaderboard() {
     tabEnterBtn = document.getElementById('scoring-tab-enter');
     tabLbBtn = document.getElementById('scoring-tab-leaderboard');
+    tabGroupsBtn = document.getElementById('scoring-tab-groups');
     enterViewEl = document.getElementById('scoring-enter-view');
     lbViewEl = document.getElementById('scoring-leaderboard-view');
+    groupsViewEl = document.getElementById('scoring-groups-view');
     lbRoundEl = document.getElementById('scoring-lb-round');
     lbUpdatedEl = document.getElementById('scoring-lb-updated');
     lbLoadingEl = document.getElementById('scoring-lb-loading');
@@ -496,11 +509,17 @@
     lbFsUpdatedEl = document.getElementById('scoring-lb-fs-updated');
     lbFsTbodyEl = document.getElementById('scoring-lb-fs-tbody');
     lbCloseFsBtn = document.getElementById('scoring-lb-close-fullscreen');
+    groupsTitleEl = document.getElementById('scoring-groups-title');
+    groupsSubtitleEl = document.getElementById('scoring-groups-subtitle');
+    groupsLoadingEl = document.getElementById('scoring-groups-loading');
+    groupsErrorEl = document.getElementById('scoring-groups-error');
+    groupsListEl = document.getElementById('scoring-groups-list');
 
     if (!tabEnterBtn || !tabLbBtn) return;
 
     tabEnterBtn.addEventListener('click', function () { setView('enter'); });
     tabLbBtn.addEventListener('click', function () { setView('leaderboard'); });
+    if (tabGroupsBtn) tabGroupsBtn.addEventListener('click', function () { setView('groups'); });
 
     if (lbFullscreenBtn) lbFullscreenBtn.addEventListener('click', openFullscreen);
     if (lbCloseFsBtn) lbCloseFsBtn.addEventListener('click', closeFullscreen);
@@ -522,30 +541,49 @@
 
   function setView(view) {
     lbView = view;
+
+    // Polling only runs while the Leaderboard view is active. Any other view
+    // (Enter Scores, Groups) stops it; switching back to Leaderboard restarts.
+    if (view !== 'leaderboard') stopLbPolling();
+
+    // Hide all three view containers.
+    if (enterViewEl) enterViewEl.classList.add('hidden');
+    if (lbViewEl) lbViewEl.classList.add('hidden');
+    if (groupsViewEl) groupsViewEl.classList.add('hidden');
+
     if (view === 'leaderboard') {
-      if (enterViewEl) enterViewEl.classList.add('hidden');
       if (lbViewEl) lbViewEl.classList.remove('hidden');
-      setToggleActive(tabLbBtn, tabEnterBtn);
       startLbPolling();
       // If we already have data, render immediately while the next poll runs.
       if (lastLeaderboard) renderLeaderboard();
+    } else if (view === 'groups') {
+      if (groupsViewEl) groupsViewEl.classList.remove('hidden');
+      fetchGroups();
     } else {
+      // 'enter' (default)
       if (enterViewEl) enterViewEl.classList.remove('hidden');
-      if (lbViewEl) lbViewEl.classList.add('hidden');
-      setToggleActive(tabEnterBtn, tabLbBtn);
-      stopLbPolling();
     }
+
+    updateToggleStyles();
   }
 
-  function setToggleActive(activeBtn, inactiveBtn) {
-    if (activeBtn) {
-      activeBtn.classList.add('bg-mscc-red', 'text-white');
-      activeBtn.classList.remove('text-mscc-black/60', 'hover:text-mscc-black');
-    }
-    if (inactiveBtn) {
-      inactiveBtn.classList.remove('bg-mscc-red', 'text-white');
-      inactiveBtn.classList.add('text-mscc-black/60', 'hover:text-mscc-black');
-    }
+  function updateToggleStyles() {
+    [
+      [tabEnterBtn, 'enter'],
+      [tabLbBtn, 'leaderboard'],
+      [tabGroupsBtn, 'groups']
+    ].forEach(function (entry) {
+      var btn = entry[0];
+      var view = entry[1];
+      if (!btn) return;
+      if (lbView === view) {
+        btn.classList.add('bg-mscc-red', 'text-white');
+        btn.classList.remove('text-mscc-black/60', 'hover:text-mscc-black');
+      } else {
+        btn.classList.remove('bg-mscc-red', 'text-white');
+        btn.classList.add('text-mscc-black/60', 'hover:text-mscc-black');
+      }
+    });
   }
 
   function startLbPolling() {
@@ -763,6 +801,92 @@
     lbFullscreenOpen = false;
     lbFullscreenOverlay.classList.add('hidden');
     document.body.style.overflow = '';
+  }
+
+  // ---------- Groups ----------
+
+  function fetchGroups() {
+    // Show loading, hide error and prior list while the request is in flight.
+    if (groupsLoadingEl) groupsLoadingEl.classList.remove('hidden');
+    if (groupsErrorEl) groupsErrorEl.classList.add('hidden');
+    if (groupsListEl) groupsListEl.classList.add('hidden');
+
+    jsonp({ action: 'groups', round: 'MORNING' }, function (data) {
+      if (groupsLoadingEl) groupsLoadingEl.classList.add('hidden');
+
+      if (data && data.error === 'Network error' && !data.ok) {
+        console.warn('Groups jsonp network error');
+        if (groupsErrorEl) groupsErrorEl.classList.remove('hidden');
+        return;
+      }
+      if (!data || !data.ok || !data.groups) {
+        console.warn('Groups response invalid:', data);
+        if (groupsErrorEl) groupsErrorEl.classList.remove('hidden');
+        return;
+      }
+
+      lastGroups = data.groups;
+      if (groupsListEl) groupsListEl.classList.remove('hidden');
+      renderGroups();
+    });
+  }
+
+  function renderGroups() {
+    if (!lastGroups || !groupsListEl) return;
+
+    // Header.
+    var titleText = lastGroups.round
+      ? lastGroups.round.charAt(0) + lastGroups.round.slice(1).toLowerCase() + ' Groups'
+      : 'Groups';
+    if (groupsTitleEl) groupsTitleEl.textContent = titleText;
+
+    var subText = '';
+    if (lastGroups.count != null) {
+      subText = lastGroups.count + ' groups, shotgun start';
+    }
+    if (groupsSubtitleEl) groupsSubtitleEl.textContent = subText;
+
+    // Bucket groups by start hole, preserving the server's order.
+    var byHole = {};
+    var holesInOrder = [];
+    (lastGroups.groups || []).forEach(function (g) {
+      var h = g.startHole;
+      if (h == null) return;
+      if (byHole[h] == null) {
+        byHole[h] = [];
+        holesInOrder.push(h);
+      }
+      byHole[h].push(g);
+    });
+
+    var html = '';
+    holesInOrder.forEach(function (h) {
+      html += '<div>' +
+        '<h3 class="font-western text-mscc-red text-lg md:text-xl mb-3">Hole ' + escapeHtml(String(h)) + '</h3>' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">';
+      byHole[h].forEach(function (g) {
+        html += buildGroupCard(g);
+      });
+      html += '</div>' +
+        '</div>';
+    });
+    groupsListEl.innerHTML = html;
+  }
+
+  function buildGroupCard(g) {
+    var members = g.members || [];
+    var memberHtml = '';
+    members.forEach(function (m) {
+      var hcp = (m.handicap != null && m.handicap !== '') ? String(m.handicap) : '-';
+      memberHtml += '<li class="flex items-baseline justify-between gap-2">' +
+        '<span class="text-mscc-black truncate">' + escapeHtml(m.name || '') + '</span>' +
+        '<span class="text-mscc-black/50 text-xs uppercase tracking-wider whitespace-nowrap">Hcp ' + escapeHtml(hcp) + '</span>' +
+        '</li>';
+    });
+    return '<div class="bg-mscc-cream rounded-2xl p-5 border border-mscc-black/5 shadow-sm">' +
+      '<h4 class="font-western text-2xl text-mscc-red mb-3">' + escapeHtml(g.code || '') + '</h4>' +
+      '<ul class="space-y-1.5">' + memberHtml + '</ul>' +
+      '</div>';
   }
 
   // ---------- Helpers ----------
