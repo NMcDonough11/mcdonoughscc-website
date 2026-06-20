@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const TABS = ['home', 'the-day', 'the-course', 'sponsors', 'volunteer', 'register'];
+  const TABS = ['home', 'the-day', 'the-course', 'scoring', 'sponsors', 'volunteer', 'register'];
   const DEFAULT_TAB = 'home';
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

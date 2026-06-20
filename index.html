@@ -61,6 +61,7 @@
         <a href="#home" class="nav-link active" data-tab="home" role="tab" aria-selected="true" aria-controls="home">Home</a>
         <a href="#the-day" class="nav-link" data-tab="the-day" role="tab" aria-selected="false" aria-controls="the-day">The Day</a>
         <a href="#the-course" class="nav-link" data-tab="the-course" role="tab" aria-selected="false" aria-controls="the-course">The Course</a>
+        <a href="#scoring" class="nav-link" data-tab="scoring" role="tab" aria-selected="false" aria-controls="scoring">Scoring</a>
         <a href="#sponsors" class="nav-link" data-tab="sponsors" role="tab" aria-selected="false" aria-controls="sponsors">Sponsors</a>
         <a href="#volunteer" class="nav-link" data-tab="volunteer" role="tab" aria-selected="false" aria-controls="volunteer">Volunteer</a>
         <a href="#register" class="nav-link" data-tab="register" role="tab" aria-selected="false" aria-controls="register">Register</a>
@@ -89,6 +90,7 @@
         <a href="#home" class="nav-link active py-3 text-base" data-tab="home">Home</a>
         <a href="#the-day" class="nav-link py-3 text-base" data-tab="the-day">The Day</a>
         <a href="#the-course" class="nav-link py-3 text-base" data-tab="the-course">The Course</a>
+        <a href="#scoring" class="nav-link py-3 text-base" data-tab="scoring">Scoring</a>
         <a href="#sponsors" class="nav-link py-3 text-base" data-tab="sponsors">Sponsors</a>
         <a href="#volunteer" class="nav-link py-3 text-base" data-tab="volunteer">Volunteer</a>
         <a href="#register" class="nav-link py-3 text-base text-mscc-red" data-tab="register">Register Now</a>
@@ -742,6 +744,106 @@
     </section>
 
     <!-- ==========================================
+         TAB: SCORING
+         ========================================== -->
+    <section id="scoring" class="tab-section" role="tabpanel" aria-labelledby="tab-scoring" aria-hidden="true">
+
+      <!-- Section Banner -->
+      <div class="bg-mscc-red py-20 md:py-28 text-center px-4 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-[0.06]" style="background: repeating-linear-gradient(135deg, #000 0px, #000 2px, transparent 2px, transparent 40px);"></div>
+        <div class="relative z-10">
+          <h1 class="font-western text-4xl md:text-6xl text-mscc-cream mb-3">Live Scoring</h1>
+          <p class="text-mscc-cream/70 text-lg">Enter your group code to see your foursome's round.</p>
+        </div>
+      </div>
+
+      <!-- Code Entry Card -->
+      <div class="py-16 md:py-20 px-4">
+        <div class="max-w-md mx-auto reveal">
+          <div class="bg-white rounded-2xl shadow-md p-8 md:p-10 border border-mscc-black/5">
+            <label for="scoring-code-input" class="block text-mscc-black/70 text-xs font-semibold mb-3 uppercase tracking-[0.2em]">Group Code</label>
+            <input
+              id="scoring-code-input"
+              type="text"
+              placeholder="e.g. BISON"
+              autocomplete="off"
+              autocapitalize="characters"
+              spellcheck="false"
+              maxlength="20"
+              class="form-input w-full px-4 py-4 rounded-lg bg-mscc-cream border-2 border-mscc-black/10 text-mscc-black text-2xl font-western tracking-widest text-center uppercase transition-all"
+              style="text-transform: uppercase;"
+            >
+            <p id="scoring-error" class="hidden mt-3 text-mscc-red text-sm text-center font-semibold"></p>
+            <button
+              id="scoring-enter-btn"
+              type="button"
+              class="w-full mt-5 bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 rounded-full text-lg transition-all hover:scale-[1.02] uppercase tracking-wider"
+            >
+              Enter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Area -->
+      <div id="scoring-results" class="hidden pb-20 px-4">
+        <div class="max-w-6xl mx-auto">
+
+          <!-- Group Header -->
+          <div class="mb-8 text-center">
+            <span id="scoring-round-label" class="block text-mscc-gold font-western text-sm uppercase tracking-[0.2em] mb-2"></span>
+            <h2 class="font-western text-3xl md:text-5xl text-mscc-red leading-tight">
+              Group <span id="scoring-group-code"></span>
+            </h2>
+            <p class="text-mscc-black/60 mt-3 text-sm uppercase tracking-wider">
+              Starting Hole <span id="scoring-start-hole" class="font-bold text-mscc-black"></span>
+            </p>
+          </div>
+
+          <!-- Scorecard -->
+          <div class="bg-white rounded-2xl shadow-md border border-mscc-black/5 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-mscc-black text-white">
+                  <tr>
+                    <th class="sticky left-0 bg-mscc-black px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs z-10 whitespace-nowrap">Player</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">Hcp</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">1</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">2</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">3</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">4</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">5</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">6</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">7</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">8</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">9</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">10</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">11</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">12</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">13</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">14</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">15</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">16</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">17</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">18</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs bg-mscc-red">Total</th>
+                    <th class="px-3 py-3 text-center font-semibold uppercase tracking-wider text-xs">Thru</th>
+                  </tr>
+                </thead>
+                <tbody id="scoring-tbody" class="divide-y divide-mscc-black/5"></tbody>
+              </table>
+            </div>
+            <div class="px-4 py-2 bg-mscc-cream/50 text-xs text-mscc-black/50 text-center border-t border-mscc-black/5">
+              Swipe to see all 18 holes &mdash; this is a view-only scorecard.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==========================================
          TAB 3: SPONSORS
          ========================================== -->
     <section id="sponsors" class="tab-section" role="tabpanel" aria-labelledby="tab-sponsors" aria-hidden="true">
@@ -1381,6 +1483,8 @@
         <ul class="space-y-2 text-sm">
           <li><a href="#home" class="hover:text-mscc-gold transition-colors">Home</a></li>
           <li><a href="#the-day" class="hover:text-mscc-gold transition-colors">The Day</a></li>
+          <li><a href="#the-course" class="hover:text-mscc-gold transition-colors">The Course</a></li>
+          <li><a href="#scoring" class="hover:text-mscc-gold transition-colors">Scoring</a></li>
           <li><a href="#sponsors" class="hover:text-mscc-gold transition-colors">Sponsors</a></li>
           <li><a href="#volunteer" class="hover:text-mscc-gold transition-colors">Volunteer</a></li>
           <li><a href="#register" class="hover:text-mscc-gold transition-colors">Register</a></li>
@@ -1417,6 +1521,10 @@
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M9 21V8.5a3.5 3.5 0 017 0V21"/></svg>
       <span>Course</span>
     </a>
+    <a href="#scoring" class="bottom-nav-link" data-tab="scoring">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 21V5a1 1 0 011-1h12l-3 4 3 4H6v9"/></svg>
+      <span>Scoring</span>
+    </a>
     <a href="#sponsors" class="bottom-nav-link" data-tab="sponsors">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
       <span>Sponsors</span>
@@ -1448,6 +1556,7 @@
   <script src="js/app.js" defer></script>
   <script src="js/countdown.js" defer></script>
   <script src="js/spots.js" defer></script>
+  <script src="js/scoring.js" defer></script>
   <script src="js/animations.js" defer></script>
 
 </body>
