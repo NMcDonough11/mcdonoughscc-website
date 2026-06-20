@@ -757,6 +757,17 @@
         </div>
       </div>
 
+      <!-- Segmented Toggle -->
+      <div class="px-4 pt-8">
+        <div class="max-w-md mx-auto bg-mscc-cream rounded-full p-1 flex border border-mscc-black/10 shadow-sm">
+          <button id="scoring-tab-enter" type="button" class="flex-1 px-4 py-2.5 rounded-full font-semibold text-sm uppercase tracking-wider transition-colors bg-mscc-red text-white">Enter Scores</button>
+          <button id="scoring-tab-leaderboard" type="button" class="flex-1 px-4 py-2.5 rounded-full font-semibold text-sm uppercase tracking-wider transition-colors text-mscc-black/60 hover:text-mscc-black">Leaderboard</button>
+        </div>
+      </div>
+
+      <!-- Enter Scores View -->
+      <div id="scoring-enter-view">
+
       <!-- Code Entry Card -->
       <div class="py-16 md:py-20 px-4">
         <div class="max-w-md mx-auto reveal">
@@ -839,6 +850,61 @@
             <div class="px-4 py-2 bg-mscc-cream/50 text-xs text-mscc-black/50 text-center border-t border-mscc-black/5">
               Swipe to see all 18 holes. Tap scores above to edit.
             </div>
+          </div>
+
+        </div>
+      </div>
+
+      </div> <!-- /#scoring-enter-view -->
+
+      <!-- Leaderboard View -->
+      <div id="scoring-leaderboard-view" class="hidden">
+        <div class="max-w-4xl mx-auto pt-8 pb-20 px-4">
+
+          <!-- Header: round, updated stamp, fullscreen button -->
+          <div class="flex items-start justify-between gap-3 mb-6">
+            <div class="min-w-0">
+              <h2 id="scoring-lb-round" class="font-western text-2xl md:text-3xl text-mscc-red leading-tight">Leaderboard</h2>
+              <p id="scoring-lb-updated" class="text-mscc-black/50 text-xs mt-1"></p>
+            </div>
+            <button id="scoring-lb-fullscreen" type="button" class="hidden bg-mscc-black hover:bg-mscc-black/80 text-mscc-cream font-semibold rounded-full px-4 py-2 text-xs uppercase tracking-wider transition-colors flex items-center gap-2 flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+              Fullscreen
+            </button>
+          </div>
+
+          <!-- Loading state -->
+          <div id="scoring-lb-loading" class="bg-white rounded-2xl shadow-md border border-mscc-black/5 p-10 text-center">
+            <p class="text-mscc-black/60 font-semibold">Loading scores...</p>
+          </div>
+
+          <!-- Empty state -->
+          <div id="scoring-lb-empty" class="hidden bg-white rounded-2xl shadow-md border border-mscc-black/5 p-10 text-center">
+            <p class="font-western text-2xl text-mscc-red">No scores in yet</p>
+            <p class="text-mscc-black/40 text-sm mt-2">Check back once players have teed off.</p>
+          </div>
+
+          <!-- Table -->
+          <div id="scoring-lb-table-wrap" class="hidden bg-white rounded-2xl shadow-md border border-mscc-black/5 overflow-hidden">
+            <table class="w-full text-sm table-fixed">
+              <colgroup>
+                <col class="w-12">
+                <col>
+                <col class="w-14">
+                <col class="w-14">
+                <col class="w-16">
+              </colgroup>
+              <thead class="bg-mscc-black text-white">
+                <tr>
+                  <th class="px-2 py-3 text-center font-semibold uppercase tracking-wider text-xs">Pos</th>
+                  <th class="px-3 py-3 text-left font-semibold uppercase tracking-wider text-xs">Player</th>
+                  <th class="px-2 py-3 text-center font-semibold uppercase tracking-wider text-xs">Hcp</th>
+                  <th class="px-2 py-3 text-center font-semibold uppercase tracking-wider text-xs">Thru</th>
+                  <th class="px-2 py-3 text-center font-semibold uppercase tracking-wider text-xs bg-mscc-red">Net</th>
+                </tr>
+              </thead>
+              <tbody id="scoring-lb-tbody" class="divide-y divide-mscc-black/5"></tbody>
+            </table>
           </div>
 
         </div>
@@ -1548,6 +1614,43 @@
   <div id="lightbox" class="lightbox-overlay hidden" role="dialog" aria-modal="true" aria-label="Photo viewer" aria-hidden="true">
     <button class="absolute top-6 right-6 text-white/80 hover:text-white text-4xl transition-colors z-10" onclick="event.stopPropagation(); document.getElementById('lightbox').classList.add('hidden'); document.body.style.overflow='';">&times;</button>
     <img id="lightbox-img" src="" alt="" class="max-w-[90vw] max-h-[85vh] object-contain rounded-lg shadow-2xl">
+  </div>
+
+  <!-- ============================================
+       LEADERBOARD FULLSCREEN OVERLAY
+       ============================================ -->
+  <div id="scoring-lb-fullscreen-overlay" class="hidden fixed inset-0 z-50 bg-mscc-black text-mscc-cream overflow-y-auto" role="dialog" aria-modal="true" aria-label="Leaderboard fullscreen">
+    <div class="flex items-start justify-between gap-4 p-6 md:p-10 border-b border-white/10">
+      <div class="min-w-0">
+        <h1 class="font-western text-3xl md:text-5xl lg:text-6xl text-mscc-red leading-tight">McDonough Stampede</h1>
+        <p id="scoring-lb-fs-round" class="font-western text-xl md:text-3xl text-mscc-gold mt-1"></p>
+        <p id="scoring-lb-fs-updated" class="text-mscc-cream/60 text-sm md:text-base mt-2"></p>
+      </div>
+      <button id="scoring-lb-close-fullscreen" type="button" class="bg-white/10 hover:bg-white/20 text-mscc-cream font-semibold rounded-full w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-colors flex-shrink-0" aria-label="Close fullscreen">
+        <svg class="w-6 h-6 md:w-7 md:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-6 md:px-10 pb-10">
+      <table class="w-full table-fixed">
+        <colgroup>
+          <col class="w-16 md:w-24">
+          <col>
+          <col class="w-16 md:w-24">
+          <col class="w-16 md:w-24">
+          <col class="w-20 md:w-32">
+        </colgroup>
+        <thead>
+          <tr class="text-mscc-gold font-western text-sm md:text-xl uppercase tracking-[0.2em] border-b-2 border-mscc-gold/30">
+            <th class="px-4 py-4 text-center">Pos</th>
+            <th class="px-4 py-4 text-left">Player</th>
+            <th class="px-4 py-4 text-center">Hcp</th>
+            <th class="px-4 py-4 text-center">Thru</th>
+            <th class="px-4 py-4 text-center">Net</th>
+          </tr>
+        </thead>
+        <tbody id="scoring-lb-fs-tbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- Instagram Embed Script -->

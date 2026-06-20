@@ -24,6 +24,20 @@
   // DOM refs (overview table)
   var theadRow, tbody;
 
+  // ----- Leaderboard state -----
+  var lbView = 'enter';                // 'enter' | 'leaderboard'
+  var lbPollingInterval = null;        // setInterval handle while polling
+  var lastLeaderboard = null;          // last server payload
+  var lastLeaderboardAt = null;        // Date of last successful fetch
+  var lbFullscreenOpen = false;
+
+  // ----- Leaderboard DOM refs -----
+  var tabEnterBtn, tabLbBtn;
+  var enterViewEl, lbViewEl;
+  var lbRoundEl, lbUpdatedEl;
+  var lbLoadingEl, lbEmptyEl, lbTableWrapEl, lbTbodyEl;
+  var lbFullscreenBtn, lbFullscreenOverlay, lbFsRoundEl, lbFsUpdatedEl, lbFsTbodyEl, lbCloseFsBtn;
+
   // Monotonic counter so concurrent JSONP requests do not collide.
   var jsonpCounter = 0;
 
@@ -124,6 +138,8 @@
 
     if (prevBtn) prevBtn.addEventListener('click', function () { changeHole(-1); });
     if (nextBtn) nextBtn.addEventListener('click', function () { changeHole(1); });
+
+    initLeaderboard();
   }
 
   // ---------- Lookup ----------
@@ -458,6 +474,231 @@
         resolve(data);
       });
     });
+  }
+
+  // ---------- Leaderboard ----------
+
+  function initLeaderboard() {
+    tabEnterBtn = document.getElementById('scoring-tab-enter');
+    tabLbBtn = document.getElementById('scoring-tab-leaderboard');
+    enterViewEl = document.getElementById('scoring-enter-view');
+    lbViewEl = document.getElementById('scoring-leaderboard-view');
+    lbRoundEl = document.getElementById('scoring-lb-round');
+    lbUpdatedEl = document.getElementById('scoring-lb-updated');
+    lbLoadingEl = document.getElementById('scoring-lb-loading');
+    lbEmptyEl = document.getElementById('scoring-lb-empty');
+    lbTableWrapEl = document.getElementById('scoring-lb-table-wrap');
+    lbTbodyEl = document.getElementById('scoring-lb-tbody');
+    lbFullscreenBtn = document.getElementById('scoring-lb-fullscreen');
+    lbFullscreenOverlay = document.getElementById('scoring-lb-fullscreen-overlay');
+    lbFsRoundEl = document.getElementById('scoring-lb-fs-round');
+    lbFsUpdatedEl = document.getElementById('scoring-lb-fs-updated');
+    lbFsTbodyEl = document.getElementById('scoring-lb-fs-tbody');
+    lbCloseFsBtn = document.getElementById('scoring-lb-close-fullscreen');
+
+    if (!tabEnterBtn || !tabLbBtn) return;
+
+    tabEnterBtn.addEventListener('click', function () { setView('enter'); });
+    tabLbBtn.addEventListener('click', function () { setView('leaderboard'); });
+
+    if (lbFullscreenBtn) lbFullscreenBtn.addEventListener('click', openFullscreen);
+    if (lbCloseFsBtn) lbCloseFsBtn.addEventListener('click', closeFullscreen);
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && lbFullscreenOpen) closeFullscreen();
+    });
+
+    // Stop polling when the user navigates away from the Scoring tab; resume
+    // when they come back, but only if they had the leaderboard view active.
+    window.addEventListener('hashchange', function () {
+      if (window.location.hash !== '#scoring') {
+        stopLbPolling();
+      } else if (lbView === 'leaderboard') {
+        startLbPolling();
+      }
+    });
+  }
+
+  function setView(view) {
+    lbView = view;
+    if (view === 'leaderboard') {
+      if (enterViewEl) enterViewEl.classList.add('hidden');
+      if (lbViewEl) lbViewEl.classList.remove('hidden');
+      setToggleActive(tabLbBtn, tabEnterBtn);
+      startLbPolling();
+      // If we already have data, render immediately while the next poll runs.
+      if (lastLeaderboard) renderLeaderboard();
+    } else {
+      if (enterViewEl) enterViewEl.classList.remove('hidden');
+      if (lbViewEl) lbViewEl.classList.add('hidden');
+      setToggleActive(tabEnterBtn, tabLbBtn);
+      stopLbPolling();
+    }
+  }
+
+  function setToggleActive(activeBtn, inactiveBtn) {
+    if (activeBtn) {
+      activeBtn.classList.add('bg-mscc-red', 'text-white');
+      activeBtn.classList.remove('text-mscc-black/60', 'hover:text-mscc-black');
+    }
+    if (inactiveBtn) {
+      inactiveBtn.classList.remove('bg-mscc-red', 'text-white');
+      inactiveBtn.classList.add('text-mscc-black/60', 'hover:text-mscc-black');
+    }
+  }
+
+  function startLbPolling() {
+    if (lbPollingInterval !== null) return;
+    fetchLeaderboard();
+    lbPollingInterval = setInterval(fetchLeaderboard, 30000);
+  }
+
+  function stopLbPolling() {
+    if (lbPollingInterval !== null) {
+      clearInterval(lbPollingInterval);
+      lbPollingInterval = null;
+    }
+  }
+
+  function fetchLeaderboard() {
+    jsonp({ action: 'leaderboard' }, function (data) {
+      if (data && data.error === 'Network error' && !data.ok) {
+        console.warn('Leaderboard jsonp network error');
+        return;
+      }
+      if (!data || !data.ok || !data.leaderboard) {
+        console.warn('Leaderboard response invalid:', data);
+        return;
+      }
+      lastLeaderboard = data.leaderboard;
+      lastLeaderboardAt = new Date();
+      renderLeaderboard();
+    });
+  }
+
+  function renderLeaderboard() {
+    if (!lastLeaderboard) return;
+    var players = lastLeaderboard.players || [];
+
+    var anyStarted = false;
+    for (var i = 0; i < players.length; i++) {
+      if (players[i].started === true) { anyStarted = true; break; }
+    }
+
+    var roundText = lastLeaderboard.round
+      ? lastLeaderboard.round.charAt(0) + lastLeaderboard.round.slice(1).toLowerCase() + ' Leaderboard'
+      : 'Leaderboard';
+    if (lbRoundEl) lbRoundEl.textContent = roundText;
+    if (lbFsRoundEl) lbFsRoundEl.textContent = roundText;
+
+    var stamp = formatUpdated(lastLeaderboardAt);
+    if (lbUpdatedEl) lbUpdatedEl.textContent = stamp;
+    if (lbFsUpdatedEl) lbFsUpdatedEl.textContent = stamp;
+
+    if (lbLoadingEl) lbLoadingEl.classList.add('hidden');
+
+    if (!anyStarted) {
+      if (lbEmptyEl) lbEmptyEl.classList.remove('hidden');
+      if (lbTableWrapEl) lbTableWrapEl.classList.add('hidden');
+      if (lbFullscreenBtn) lbFullscreenBtn.classList.add('hidden');
+      if (lbFullscreenOpen) closeFullscreen();
+      return;
+    }
+
+    if (lbEmptyEl) lbEmptyEl.classList.add('hidden');
+    if (lbTableWrapEl) lbTableWrapEl.classList.remove('hidden');
+    if (lbFullscreenBtn) lbFullscreenBtn.classList.remove('hidden');
+
+    renderLeaderboardRows(lbTbodyEl, false);
+    if (lbFullscreenOpen) renderLeaderboardRows(lbFsTbodyEl, true);
+  }
+
+  function renderLeaderboardRows(tbodyEl, large) {
+    if (!tbodyEl || !lastLeaderboard) return;
+    var players = lastLeaderboard.players || [];
+    var cutSize = lastLeaderboard.cutSize || 0;
+    var hasCutLine = cutSize > 0 && players.length > cutSize;
+
+    tbodyEl.innerHTML = '';
+    players.forEach(function (p) {
+      var aboveCut = (cutSize > 0 && p.pos <= cutSize);
+      var belowCut = (hasCutLine && p.pos > cutSize);
+
+      var net = formatNet(p);
+      var thru = (p.started === false) ? '-' : String(p.thru != null ? p.thru : 0);
+      var hcp = (p.handicap != null && p.handicap !== '') ? String(p.handicap) : '-';
+
+      var row = document.createElement('tr');
+      var sizeCls;
+
+      if (large) {
+        sizeCls = 'py-4 md:py-5 text-xl md:text-3xl';
+        row.className = (aboveCut ? 'bg-white/5 ' : (belowCut ? 'opacity-50 ' : '')) + 'border-b border-white/10';
+        row.innerHTML = '' +
+          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-gold">' + escapeHtml(String(p.pos)) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-left font-semibold text-mscc-cream truncate">' + escapeHtml(p.name || '') + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream/60">' + escapeHtml(hcp) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream">' + escapeHtml(thru) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(net) + '</td>';
+      } else {
+        sizeCls = 'py-3 text-sm';
+        row.className = aboveCut ? 'bg-mscc-gold/10' : (belowCut ? 'opacity-60' : '');
+        row.innerHTML = '' +
+          '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-black">' + escapeHtml(String(p.pos)) + '</td>' +
+          '<td class="px-3 ' + sizeCls + ' font-semibold text-mscc-black truncate">' + escapeHtml(p.name || '') + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black/60">' + escapeHtml(hcp) + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black">' + escapeHtml(thru) + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-red bg-mscc-red/5">' + escapeHtml(net) + '</td>';
+      }
+      tbodyEl.appendChild(row);
+
+      if (hasCutLine && p.pos === cutSize) {
+        var cutRow = document.createElement('tr');
+        var cutText = 'Cut Line. Top ' + cutSize + ' advance.';
+        if (large) {
+          cutRow.innerHTML = '<td colspan="5" class="bg-mscc-red text-mscc-cream px-4 py-3 md:py-4 text-center font-western text-base md:text-2xl uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
+        } else {
+          cutRow.innerHTML = '<td colspan="5" class="bg-mscc-red text-mscc-cream px-4 py-2 text-center font-western text-xs uppercase tracking-[0.2em]">' + escapeHtml(cutText) + '</td>';
+        }
+        tbodyEl.appendChild(cutRow);
+      }
+    });
+  }
+
+  function formatNet(p) {
+    if (!p || p.started === false) return '-';
+    var n = p.netDisplay;
+    if (n == null || n === '') return '-';
+    if (typeof n !== 'number') {
+      var parsed = parseInt(n, 10);
+      if (isNaN(parsed)) return String(n);
+      n = parsed;
+    }
+    if (n === 0) return 'E';
+    if (n < 0) return String(n);
+    return '+' + n;
+  }
+
+  function formatUpdated(d) {
+    if (!d) return '';
+    var h = String(d.getHours()).padStart(2, '0');
+    var m = String(d.getMinutes()).padStart(2, '0');
+    return 'Updated ' + h + ':' + m;
+  }
+
+  function openFullscreen() {
+    if (!lbFullscreenOverlay || !lastLeaderboard) return;
+    lbFullscreenOpen = true;
+    lbFullscreenOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    renderLeaderboardRows(lbFsTbodyEl, true);
+  }
+
+  function closeFullscreen() {
+    if (!lbFullscreenOverlay) return;
+    lbFullscreenOpen = false;
+    lbFullscreenOverlay.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
   // ---------- Helpers ----------
