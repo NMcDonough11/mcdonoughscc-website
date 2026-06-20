@@ -10,6 +10,8 @@
   // Zero strokes is impossible in real golf, so the server treats it as "delete".
   var CLEAR_STROKES = 0;
 
+  var PAR_BY_HOLE = {1:4,2:4,3:5,4:4,5:3,6:4,7:4,8:3,9:5,10:3,11:4,12:4,13:4,14:4,15:4,16:3,17:5,18:4};
+
   // State
   var currentCard = null;            // last server-confirmed (or optimistic) card
   var holeConfig = {};               // hole number -> { par, maxPerHole }
@@ -289,6 +291,24 @@
       }
       html += '</div>';
 
+      if (currentCard.round === 'MORNING') {
+        var curMullRaw = (player.mulligans || {})[String(currentHole)];
+        var curMullNum = (curMullRaw != null && curMullRaw !== '') ? parseInt(curMullRaw, 10) : 0;
+        html += '<div class="mt-3 flex items-center gap-2">';
+        html += '<span class="text-mscc-black/50 text-xs uppercase tracking-wider">Mull</span>';
+        html += '<div class="flex gap-1.5">';
+        for (var mm = 0; mm <= 2; mm++) {
+          var mSel = (curMullNum === mm);
+          var mSkin = mSel
+            ? 'bg-mscc-gold text-mscc-black border-mscc-gold'
+            : 'bg-mscc-cream text-mscc-black/50 border-mscc-black/10';
+          html += '<button type="button" data-mull="' + mm + '" data-mull-player="' +
+            escapeHtml(player.playerId) + '" class="mull-btn w-9 h-9 rounded-lg font-bold text-sm border-2 transition-colors active:scale-95 ' +
+            mSkin + '" aria-pressed="' + (mSel ? 'true' : 'false') + '">' + mm + '</button>';
+        }
+        html += '</div></div>';
+      }
+
       // Status line (error or retry).
       if (hasErrorHere) {
         html += '<p class="mt-3 text-mscc-red text-xs font-semibold">' +
@@ -311,6 +331,13 @@
         var pid = b.getAttribute('data-player');
         var strokes = parseInt(b.getAttribute('data-strokes'), 10);
         onScoreTap(pid, strokes);
+      });
+    });
+    playersList.querySelectorAll('.mull-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var pid = b.getAttribute('data-mull-player');
+        var mulls = parseInt(b.getAttribute('data-mull'), 10);
+        onMulliganTap(pid, mulls);
       });
     });
     playersList.querySelectorAll('[data-player-retry]').forEach(function (b) {
@@ -396,6 +423,9 @@
     // Tapping the highlighted number again clears the score.
     var newStrokes = (existingNum === strokes) ? CLEAR_STROKES : strokes;
 
+    var curMull = (player.mulligans || {})[String(currentHole)];
+    var mulls = (curMull != null && curMull !== '') ? parseInt(curMull, 10) : 0;
+
     // Snapshot for revert on server rejection.
     var snapshot = existingRaw;
 
@@ -409,7 +439,7 @@
     renderEntryPanel();
     renderOverview();
 
-    submitScore(currentCard.code, playerId, currentHole, newStrokes)
+    submitScore(currentCard.code, playerId, currentHole, newStrokes, mulls)
       .then(function (data) {
         if (data && data.ok) {
           // Successful save. Keep the optimistic value already applied to
@@ -432,7 +462,46 @@
       .catch(function (err) {
         console.warn('submitScore error:', err);
         // Network failure. Keep the optimistic value, offer a retry.
-        pendingRetry[playerId] = { hole: currentHole, strokes: newStrokes };
+        pendingRetry[playerId] = { hole: currentHole, strokes: newStrokes, mulligans: mulls };
+        renderEntryPanel();
+      });
+  }
+
+  function onMulliganTap(playerId, mulls) {
+    if (!currentCard) return;
+    var player = findPlayer(playerId);
+    if (!player) return;
+    if (!player.mulligans) player.mulligans = {};
+
+    var snapshot = player.mulligans[String(currentHole)];
+    var newMulls = mulls;
+
+    var existingStrokeRaw = (player.scores || {})[String(currentHole)];
+    var strokesToSend = (existingStrokeRaw != null && existingStrokeRaw !== '')
+      ? parseInt(existingStrokeRaw, 10) : CLEAR_STROKES;
+
+    if (newMulls === 0) delete player.mulligans[String(currentHole)];
+    else player.mulligans[String(currentHole)] = newMulls;
+
+    delete errorByPlayer[playerId];
+    delete pendingRetry[playerId];
+    renderEntryPanel();
+
+    submitScore(currentCard.code, playerId, currentHole, strokesToSend, newMulls)
+      .then(function (data) {
+        if (data && data.ok) return;
+        if (snapshot != null && snapshot !== '' && parseInt(snapshot, 10) > 0) {
+          player.mulligans[String(currentHole)] = parseInt(snapshot, 10);
+        } else {
+          delete player.mulligans[String(currentHole)];
+        }
+        var msg = (data && data.error) ? data.error : 'Mulligan rejected.';
+        errorByPlayer[playerId] = { hole: currentHole, message: msg };
+        renderEntryPanel();
+      })
+      .catch(function (err) {
+        console.warn('mulligan submit error:', err);
+        pendingRetry[playerId] = { hole: currentHole, strokes: strokesToSend, mulligans: newMulls };
         renderEntryPanel();
       });
   }
@@ -444,7 +513,7 @@
     delete pendingRetry[playerId];
     renderEntryPanel();
 
-    submitScore(currentCard.code, playerId, pending.hole, pending.strokes)
+    submitScore(currentCard.code, playerId, pending.hole, pending.strokes, pending.mulligans)
       .then(function (data) {
         if (data && data.ok) {
           // Successful save. Keep the optimistic value. See onScoreTap for why.
@@ -470,7 +539,7 @@
       });
   }
 
-  function submitScore(code, playerId, hole, strokes) {
+  function submitScore(code, playerId, hole, strokes, mulligans) {
     // JSONP under the hood. The helper's network-error sentinel is mapped to
     // a Promise rejection so onScoreTap/retryWrite's .catch() retry path keeps
     // firing for true network failures, while real server responses (including
@@ -481,7 +550,8 @@
         code: code,
         playerId: playerId,
         hole: hole,
-        strokes: strokes
+        strokes: strokes,
+        mulligans: mulligans
       }, function (data) {
         if (data && data.error === 'Network error' && !data.ok && !data.card) {
           reject(new Error('Network error'));
@@ -787,16 +857,32 @@
     return row;
   }
 
+  function scoreMarkup(stroke, par) {
+    var hasScore = (stroke != null && stroke !== '');
+    if (!hasScore) return '<span class="text-base font-semibold text-mscc-black leading-none">&nbsp;</span>';
+    var n = parseInt(stroke, 10);
+    var txt = escapeHtml(String(n));
+    if (par == null) return '<span class="text-base font-semibold text-mscc-black leading-none">' + txt + '</span>';
+    var diff = n - par;
+    if (diff === 0) return '<span class="text-base font-semibold text-mscc-black leading-none">' + txt + '</span>';
+    var base = 'display:inline-flex;align-items:center;justify-content:center;width:1.7rem;height:1.7rem;font-size:1rem;font-weight:700;line-height:1;';
+    var style;
+    if (diff <= -2) style = base + 'color:#C8102E;border:2px solid #C8102E;border-radius:9999px;box-shadow:0 0 0 2px #fff,0 0 0 4px #C8102E;';
+    else if (diff === -1) style = base + 'color:#C8102E;border:2px solid #C8102E;border-radius:9999px;';
+    else if (diff === 1) style = base + 'color:#1A1A1A;border:2px solid rgba(26,26,26,0.45);border-radius:0.3rem;';
+    else style = base + 'color:#1A1A1A;border:2px solid rgba(26,26,26,0.45);border-radius:0.3rem;box-shadow:0 0 0 2px #fff,0 0 0 4px rgba(26,26,26,0.45);';
+    return '<span style="' + style + '">' + txt + '</span>';
+  }
+
   function buildNineStrip(label, scores, holeMulligans, startHole, endHole) {
     var cells = '';
     for (var h = startHole; h <= endHole; h++) {
       var stroke = scores[String(h)];
-      var strokeText = (stroke != null && stroke !== '') ? escapeHtml(String(stroke)) : '&nbsp;';
       var mull = parseInt(holeMulligans[String(h)], 10);
       var mullText = (!isNaN(mull) && mull > 0) ? escapeHtml(String(mull)) : '&nbsp;';
       cells += '<div class="bg-white rounded px-1 py-2 text-center">' +
         '<div class="text-xs text-mscc-black/50 leading-none">' + h + '</div>' +
-        '<div class="text-base font-semibold text-mscc-black leading-tight mt-1">' + strokeText + '</div>' +
+        '<div class="mt-1 flex items-center justify-center" style="min-height:1.7rem;">' + scoreMarkup(stroke, PAR_BY_HOLE[h]) + '</div>' +
         '<div class="text-xs text-mscc-gold font-bold leading-none mt-1">' + mullText + '</div>' +
         '</div>';
     }
