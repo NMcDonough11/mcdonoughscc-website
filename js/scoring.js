@@ -891,12 +891,21 @@
   function startLbPolling() {
     if (lbPollingInterval !== null) return;
     fetchLeaderboard();
-    lbPollingInterval = setInterval(fetchLeaderboard, 30000);
+    scheduleNextPoll();
+  }
+
+  function scheduleNextPoll() {
+    // Randomized 25 to 40s interval so many devices do not phase-lock into bursts.
+    var delay = 25000 + Math.floor(Math.random() * 15000);
+    lbPollingInterval = setTimeout(function () {
+      fetchLeaderboard();
+      scheduleNextPoll();
+    }, delay);
   }
 
   function stopLbPolling() {
     if (lbPollingInterval !== null) {
-      clearInterval(lbPollingInterval);
+      clearTimeout(lbPollingInterval);
       lbPollingInterval = null;
     }
   }
