@@ -35,6 +35,7 @@
   var lastLeaderboardAt = null;        // Date of last successful leaderboard fetch
   var lbFullscreenOpen = false;
   var expandedPlayerId = null;         // playerId of the in-tab row that's expanded
+  var expandedTeamId = null;           // teamKey of the in-tab scramble row that's expanded
   var lastGroups = null;               // last server payload (groups)
   var groupsRound = 'MORNING';
   var lbRound = 'MORNING';
@@ -840,6 +841,7 @@
     if (lbRound === round) return;
     lbRound = round;
     expandedPlayerId = null;
+    expandedTeamId = null;
     if (round === 'AFTERNOON') {
       lbDivision = 'CHAMPIONSHIP';
       if (lbDivisionWrap) lbDivisionWrap.classList.remove('hidden');
@@ -868,6 +870,7 @@
     if (lbDivision === division) return;
     lbDivision = division;
     expandedPlayerId = null;
+    expandedTeamId = null;
     updateLbDivisionStyles();
     lastLeaderboard = null;
     if (lbLoadingEl) lbLoadingEl.classList.remove('hidden');
@@ -1043,8 +1046,9 @@
     tbodyEl.innerHTML = '';
     teams.forEach(function (t) {
       var thru = (t.started === false) ? '-' : String(t.thru != null ? t.thru : 0);
-      var total = (t.started === false) ? '-' : String(t.toParDisplay != null ? t.toParDisplay : 'E');
+      var total = formatTeamToPar(t);
       var names = (t.members || []).join(', ');
+      var teamKey = String(t.groupId != null ? t.groupId : (String(t.startHole) + '-' + String(t.position)));
       var row = document.createElement('tr');
       var sizeCls;
       if (large) {
@@ -1055,9 +1059,11 @@
           '<td class="px-4 ' + sizeCls + ' text-left font-semibold text-mscc-cream truncate">' + escapeHtml(names) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream">' + escapeHtml(thru) + '</td>' +
           '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(total) + '</td>';
+        tbodyEl.appendChild(row);
       } else {
         sizeCls = 'py-3 text-sm';
-        row.className = 'hover:bg-mscc-cream/30';
+        row.className = 'hover:bg-mscc-cream/30 cursor-pointer';
+        row.setAttribute('data-lb-team-id', teamKey);
         row.innerHTML = '' +
           '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-black">' + escapeHtml(String(t.pos)) + '</td>' +
           '<td class="px-3 ' + sizeCls + ' font-semibold text-mscc-black truncate">' + escapeHtml(names) + '</td>' +
@@ -1065,9 +1071,50 @@
           '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black">' + escapeHtml(thru) + '</td>' +
           '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-red bg-mscc-red/5">' + escapeHtml(total) + '</td>' +
           '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black/20">-</td>';
+        tbodyEl.appendChild(row);
+        if (expandedTeamId === teamKey) {
+          tbodyEl.appendChild(buildTeamExpandedRow(t));
+        }
       }
-      tbodyEl.appendChild(row);
     });
+
+    if (!large) {
+      tbodyEl.querySelectorAll('tr[data-lb-team-id]').forEach(function (r) {
+        r.addEventListener('click', function () {
+          var tid = r.getAttribute('data-lb-team-id');
+          if (!tid) return;
+          expandedTeamId = (expandedTeamId === tid) ? null : tid;
+          renderLeaderboardRows(lbTbodyEl, false);
+        });
+      });
+    }
+  }
+
+  function formatTeamToPar(t) {
+    if (!t || t.started === false) return '-';
+    var n = (typeof t.toPar === 'number') ? t.toPar : parseInt(t.toPar, 10);
+    if (isNaN(n)) {
+      var d = (t.toParDisplay != null && t.toParDisplay !== '') ? String(t.toParDisplay) : 'E';
+      return (d === '0') ? 'E' : d;
+    }
+    if (n === 0) return 'E';
+    if (n < 0) return String(n);
+    return '+' + n;
+  }
+
+  function buildTeamExpandedRow(t) {
+    var scores = t.scores || {};
+    var names = (t.members || []).join(', ');
+    var row = document.createElement('tr');
+    row.className = 'bg-mscc-cream/60';
+    row.innerHTML = '<td colspan="6" class="px-3 py-4">' +
+      '<div class="font-western text-mscc-red text-lg md:text-xl mb-3">' + escapeHtml(names) + '</div>' +
+      '<div class="space-y-3">' +
+        buildNineStrip('Out', scores, {}, 1, 9) +
+        buildNineStrip('In', scores, {}, 10, 18) +
+      '</div>' +
+    '</td>';
+    return row;
   }
 
   function setLeaderboardHeaders(isScramble) {
