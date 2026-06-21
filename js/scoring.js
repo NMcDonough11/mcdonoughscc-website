@@ -38,6 +38,7 @@
   var lastGroups = null;               // last server payload (groups)
   var groupsRound = 'MORNING';
   var lbRound = 'MORNING';
+  var lbDivision = 'CHAMPIONSHIP';
   var autoScrollInterval = null;
   var autoScrollActive = false;
 
@@ -50,6 +51,7 @@
   var groupsTitleEl, groupsSubtitleEl, groupsLoadingEl, groupsErrorEl, groupsListEl;
   var groupsRoundMorningBtn, groupsRoundAfternoonBtn;
   var lbRoundMorningBtn, lbRoundAfternoonBtn;
+  var lbDivisionWrap, lbDivisionChampBtn, lbDivisionScrambleBtn;
   var lbAutoScrollBtn;
 
   // Monotonic counter so concurrent JSONP requests do not collide.
@@ -747,6 +749,9 @@
     lbRoundMorningBtn = document.getElementById('scoring-lb-round-morning');
     lbRoundAfternoonBtn = document.getElementById('scoring-lb-round-afternoon');
     lbAutoScrollBtn = document.getElementById('scoring-lb-autoscroll');
+    lbDivisionWrap = document.getElementById('scoring-lb-division-wrap');
+    lbDivisionChampBtn = document.getElementById('scoring-lb-division-champ');
+    lbDivisionScrambleBtn = document.getElementById('scoring-lb-division-scramble');
 
     if (!tabEnterBtn || !tabLbBtn) return;
 
@@ -761,6 +766,9 @@
     if (lbRoundMorningBtn) lbRoundMorningBtn.addEventListener('click', function () { setLbRound('MORNING'); });
     if (lbRoundAfternoonBtn) lbRoundAfternoonBtn.addEventListener('click', function () { setLbRound('AFTERNOON'); });
     updateLbRoundStyles();
+    if (lbDivisionChampBtn) lbDivisionChampBtn.addEventListener('click', function () { setLbDivision('CHAMPIONSHIP'); });
+    if (lbDivisionScrambleBtn) lbDivisionScrambleBtn.addEventListener('click', function () { setLbDivision('SCRAMBLE'); });
+    updateLbDivisionStyles();
 
     if (groupsRoundMorningBtn) groupsRoundMorningBtn.addEventListener('click', function () { setGroupsRound('MORNING'); });
     if (groupsRoundAfternoonBtn) groupsRoundAfternoonBtn.addEventListener('click', function () { setGroupsRound('AFTERNOON'); });
@@ -832,6 +840,13 @@
     if (lbRound === round) return;
     lbRound = round;
     expandedPlayerId = null;
+    if (round === 'AFTERNOON') {
+      lbDivision = 'CHAMPIONSHIP';
+      if (lbDivisionWrap) lbDivisionWrap.classList.remove('hidden');
+    } else {
+      if (lbDivisionWrap) lbDivisionWrap.classList.add('hidden');
+    }
+    updateLbDivisionStyles();
     updateLbRoundStyles();
     lastLeaderboard = null;
     if (lbLoadingEl) lbLoadingEl.classList.remove('hidden');
@@ -845,6 +860,27 @@
     [[lbRoundMorningBtn, 'MORNING'], [lbRoundAfternoonBtn, 'AFTERNOON']].forEach(function (e) {
       var b = e[0]; if (!b) return;
       if (lbRound === e[1]) { b.classList.add('bg-mscc-red', 'text-white'); b.classList.remove('text-mscc-black/60', 'hover:text-mscc-black'); }
+      else { b.classList.remove('bg-mscc-red', 'text-white'); b.classList.add('text-mscc-black/60', 'hover:text-mscc-black'); }
+    });
+  }
+
+  function setLbDivision(division) {
+    if (lbDivision === division) return;
+    lbDivision = division;
+    expandedPlayerId = null;
+    updateLbDivisionStyles();
+    lastLeaderboard = null;
+    if (lbLoadingEl) lbLoadingEl.classList.remove('hidden');
+    if (lbEmptyEl) lbEmptyEl.classList.add('hidden');
+    if (lbTableWrapEl) lbTableWrapEl.classList.add('hidden');
+    if (lbFullscreenBtn) lbFullscreenBtn.classList.add('hidden');
+    fetchLeaderboard();
+  }
+
+  function updateLbDivisionStyles() {
+    [[lbDivisionChampBtn, 'CHAMPIONSHIP'], [lbDivisionScrambleBtn, 'SCRAMBLE']].forEach(function (e) {
+      var b = e[0]; if (!b) return;
+      if (lbDivision === e[1]) { b.classList.add('bg-mscc-red', 'text-white'); b.classList.remove('text-mscc-black/60', 'hover:text-mscc-black'); }
       else { b.classList.remove('bg-mscc-red', 'text-white'); b.classList.add('text-mscc-black/60', 'hover:text-mscc-black'); }
     });
   }
@@ -864,8 +900,9 @@
 
   function fetchLeaderboard() {
     var reqRound = lbRound;
-    jsonp({ action: 'leaderboard', round: lbRound }, function (data) {
-      if (reqRound !== lbRound) return;
+    var reqDivision = lbDivision;
+    jsonp({ action: 'leaderboard', round: lbRound, division: lbDivision }, function (data) {
+      if (reqRound !== lbRound || reqDivision !== lbDivision) return;
       if (data && data.error === 'Network error' && !data.ok) {
         console.warn('Leaderboard jsonp network error');
         return;
@@ -882,15 +919,17 @@
 
   function renderLeaderboard() {
     if (!lastLeaderboard) return;
-    var players = lastLeaderboard.players || [];
+    var isScramble = lastLeaderboard.division === 'SCRAMBLE' && Array.isArray(lastLeaderboard.teams);
+    setLeaderboardHeaders(isScramble);
+    var rows = isScramble ? (lastLeaderboard.teams || []) : (lastLeaderboard.players || []);
 
     var anyStarted = false;
-    for (var i = 0; i < players.length; i++) {
-      if (players[i].started === true) { anyStarted = true; break; }
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].started === true) { anyStarted = true; break; }
     }
 
     var roundText;
-    if (lastLeaderboard.round === 'AFTERNOON') { roundText = 'Championship'; }
+    if (lastLeaderboard.round === 'AFTERNOON') { roundText = isScramble ? 'Scramble' : 'Championship'; }
     else { roundText = 'Morning Leaderboard'; }
     if (lbRoundEl) lbRoundEl.textContent = roundText;
     if (lbFsRoundEl) lbFsRoundEl.textContent = roundText;
@@ -919,6 +958,7 @@
 
   function renderLeaderboardRows(tbodyEl, large) {
     if (!tbodyEl || !lastLeaderboard) return;
+    if (lastLeaderboard.division === 'SCRAMBLE' && Array.isArray(lastLeaderboard.teams)) { renderScrambleRows(tbodyEl, large); return; }
     var players = lastLeaderboard.players || [];
     var cutSize = lastLeaderboard.cutSize || 0;
     var hasCutLine = (lbRound === 'MORNING') && cutSize > 0 && players.length > cutSize;
@@ -995,6 +1035,55 @@
         });
       });
     }
+  }
+
+  function renderScrambleRows(tbodyEl, large) {
+    if (!tbodyEl || !lastLeaderboard) return;
+    var teams = lastLeaderboard.teams || [];
+    tbodyEl.innerHTML = '';
+    teams.forEach(function (t) {
+      var thru = (t.started === false) ? '-' : String(t.thru != null ? t.thru : 0);
+      var total = (t.started === false) ? '-' : String(t.toParDisplay != null ? t.toParDisplay : 'E');
+      var names = (t.members || []).join(', ');
+      var row = document.createElement('tr');
+      var sizeCls;
+      if (large) {
+        sizeCls = 'py-4 md:py-5 text-base sm:text-xl md:text-3xl lg:text-4xl';
+        row.className = 'border-b border-white/10';
+        row.innerHTML = '' +
+          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-gold">' + escapeHtml(String(t.pos)) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-left font-semibold text-mscc-cream truncate">' + escapeHtml(names) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center text-mscc-cream">' + escapeHtml(thru) + '</td>' +
+          '<td class="px-4 ' + sizeCls + ' text-center font-bold text-mscc-red">' + escapeHtml(total) + '</td>';
+      } else {
+        sizeCls = 'py-3 text-sm';
+        row.className = 'hover:bg-mscc-cream/30';
+        row.innerHTML = '' +
+          '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-black">' + escapeHtml(String(t.pos)) + '</td>' +
+          '<td class="px-3 ' + sizeCls + ' font-semibold text-mscc-black truncate">' + escapeHtml(names) + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black/30">-</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black">' + escapeHtml(thru) + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center font-bold text-mscc-red bg-mscc-red/5">' + escapeHtml(total) + '</td>' +
+          '<td class="px-2 ' + sizeCls + ' text-center text-mscc-black/20">-</td>';
+      }
+      tbodyEl.appendChild(row);
+    });
+  }
+
+  function setLeaderboardHeaders(isScramble) {
+    setHeadLabels(lbTbodyEl, isScramble ? { 1: 'Team', 4: 'Total' } : { 1: 'Player', 4: 'Net' });
+    setHeadLabels(lbFsTbodyEl, isScramble ? { 1: 'Team', 3: 'Total' } : { 1: 'Player', 3: 'Net' });
+  }
+
+  function setHeadLabels(tbodyEl, labels) {
+    if (!tbodyEl || !tbodyEl.closest) return;
+    var table = tbodyEl.closest('table');
+    if (!table) return;
+    var ths = table.querySelectorAll('thead th');
+    Object.keys(labels).forEach(function (idx) {
+      var th = ths[parseInt(idx, 10)];
+      if (th) th.textContent = labels[idx];
+    });
   }
 
   function buildExpandedRow(p) {
