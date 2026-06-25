@@ -67,14 +67,14 @@
         <a href="#register" class="nav-link" data-tab="register" role="tab" aria-selected="false" aria-controls="register">Register</a>
       </nav>
 
-      <!-- Right: Spots + Register CTA + Hamburger -->
+      <!-- Right: Closed badge + Live Leaderboard CTA + Hamburger -->
       <div class="flex items-center gap-3">
-        <div id="header-spots" class="hidden md:flex items-center gap-1.5 text-sm">
-          <span id="spots-number" class="text-mscc-gold font-western text-lg">--</span>
-          <span class="text-white/60 text-xs uppercase tracking-wider">spots left</span>
+        <div class="hidden md:flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-3 py-1.5">
+          <span class="w-2 h-2 rounded-full bg-mscc-red"></span>
+          <span class="text-white/80 text-xs uppercase tracking-wider font-semibold">Registration Closed</span>
         </div>
-        <a href="#register" class="hidden md:inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-semibold py-2 px-5 rounded-full transition-all text-sm uppercase tracking-wide hover:scale-105">
-          Register Now
+        <a href="#scoring" data-tab="scoring" class="hidden md:inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-semibold py-2 px-5 rounded-full transition-all text-sm uppercase tracking-wide hover:scale-105">
+          Live Leaderboard
         </a>
         <button id="hamburger-btn" class="md:hidden text-white p-2 flex flex-col gap-1.5" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
           <span class="hamburger-line block w-6 h-0.5 bg-white rounded-full"></span>
@@ -93,7 +93,7 @@
         <a href="#scoring" class="nav-link py-3 text-base" data-tab="scoring">Scoring</a>
         <a href="#sponsors" class="nav-link py-3 text-base" data-tab="sponsors">Sponsors</a>
         <a href="#volunteer" class="nav-link py-3 text-base" data-tab="volunteer">Volunteer</a>
-        <a href="#register" class="nav-link py-3 text-base text-mscc-red" data-tab="register">Register Now</a>
+        <a href="#register" class="nav-link py-3 text-base" data-tab="register">Register</a>
       </nav>
     </div>
   </header>
@@ -150,8 +150,8 @@
             </div>
           </div>
 
-          <a href="#register" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105 shadow-2xl border border-white/10">
-            Claim Your Spot
+          <a href="#scoring" data-tab="scoring" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105 shadow-2xl border border-white/10">
+            Live Leaderboard
           </a>
         </div>
       </div>
@@ -364,8 +364,8 @@
       <!-- DON'T MISS 2026 CTA -->
       <div class="py-16 px-4 bg-mscc-red text-center">
         <h2 class="font-western text-3xl md:text-4xl text-mscc-cream mb-6 reveal">Don't Miss 2026.</h2>
-        <a href="#register" class="inline-block bg-mscc-black hover:bg-mscc-black/80 text-mscc-cream font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105 reveal">
-          Claim Your Spot
+        <a href="#scoring" data-tab="scoring" class="inline-block bg-mscc-black hover:bg-mscc-black/80 text-mscc-cream font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105 reveal">
+          Live Leaderboard
         </a>
       </div>
 
@@ -592,8 +592,8 @@
 
       <!-- CTA -->
       <div class="py-12 px-4 bg-mscc-black text-center">
-        <a href="#register" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105">
-          I'm In
+        <a href="#scoring" data-tab="scoring" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105">
+          Live Leaderboard
         </a>
       </div>
 
@@ -736,8 +736,8 @@
 
       <!-- CTA -->
       <div class="py-12 px-4 bg-mscc-black text-center">
-        <a href="#register" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105">
-          Ready to Take on the Devil's Triad?
+        <a href="#scoring" data-tab="scoring" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider transition-all hover:scale-105">
+          Live Leaderboard
         </a>
       </div>
 
@@ -1348,10 +1348,14 @@
       <div class="bg-mscc-red py-20 md:py-28 text-center px-4 relative overflow-hidden">
         <div class="absolute inset-0 opacity-[0.06]" style="background: repeating-linear-gradient(135deg, #000 0px, #000 2px, transparent 2px, transparent 40px);"></div>
         <div class="relative z-10">
-          <h1 class="font-western text-4xl md:text-6xl text-mscc-cream mb-4">Claim Your Spot</h1>
+          <div class="inline-flex items-center gap-2 bg-mscc-black/40 border border-mscc-cream/20 rounded-full px-4 py-1.5 mb-5">
+            <span class="w-2 h-2 rounded-full bg-mscc-cream"></span>
+            <span class="text-mscc-cream/90 text-xs uppercase tracking-wider font-semibold">Registration Closed</span>
+          </div>
+          <h1 class="font-western text-4xl md:text-6xl text-mscc-cream mb-4">We're Full</h1>
           <div class="inline-flex items-center gap-2 bg-mscc-black/30 backdrop-blur-sm rounded-full px-6 py-3">
-            <span class="spots-display text-2xl font-bold text-mscc-gold font-western">--</span>
-            <span class="text-mscc-cream/70">spots remaining</span>
+            <span class="spots-display text-2xl font-bold text-mscc-gold font-western">109</span>
+            <span class="text-mscc-cream/70">/ 120 players locked in</span>
           </div>
         </div>
       </div>
@@ -1360,106 +1364,24 @@
       <div class="bg-mscc-black py-8 px-4">
         <div class="max-w-lg mx-auto">
           <div class="flex justify-between text-sm mb-2">
-            <span class="text-white/60">Spots claimed</span>
-            <span class="text-mscc-gold font-semibold"><span class="spots-claimed">0</span> / 120</span>
+            <span class="text-white/60">Players registered</span>
+            <span class="text-mscc-gold font-semibold"><span class="spots-claimed">109</span> / 120</span>
           </div>
           <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-            <div id="spots-progress-bar" class="progress-bar-fill h-full bg-gradient-to-r from-mscc-gold to-mscc-red rounded-full" style="width: 0%"></div>
+            <div id="spots-progress-bar" class="progress-bar-fill h-full bg-gradient-to-r from-mscc-gold to-mscc-red rounded-full" style="width: 90.83%"></div>
           </div>
         </div>
       </div>
 
-      <!-- HOW IT WORKS -->
+      <!-- CLOSED MESSAGE -->
       <div class="py-16 px-4">
-        <div class="max-w-3xl mx-auto">
-          <h2 class="font-western text-2xl md:text-3xl text-mscc-red text-center mb-10 reveal">How It Works</h2>
-          <div class="grid md:grid-cols-3 gap-6">
-            <div class="text-center reveal">
-              <div class="w-16 h-16 bg-mscc-red rounded-full flex items-center justify-center mx-auto mb-4 text-white font-western text-2xl">1</div>
-              <h3 class="font-semibold text-mscc-black mb-2">Fill Out the Form</h3>
-              <p class="text-sm text-mscc-black/50">Register below with your details</p>
-            </div>
-            <div class="text-center reveal">
-              <div class="w-16 h-16 bg-mscc-red rounded-full flex items-center justify-center mx-auto mb-4 text-white font-western text-2xl">2</div>
-              <h3 class="font-semibold text-mscc-black mb-2">E-Transfer $310</h3>
-              <p class="text-sm text-mscc-black/50">Send to mcdonoughscc@gmail.com</p>
-            </div>
-            <div class="text-center reveal">
-              <div class="w-16 h-16 bg-mscc-red rounded-full flex items-center justify-center mx-auto mb-4 text-white font-western text-2xl">3</div>
-              <h3 class="font-semibold text-mscc-black mb-2">Show Up June 26</h3>
-              <p class="text-sm text-mscc-black/50">Ready to compete. Ready to win.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- REGISTRATION FORM -->
-      <div class="bg-mscc-black py-20 px-4">
-        <div class="max-w-2xl mx-auto">
-          <h2 class="font-western text-3xl text-mscc-cream text-center mb-10 reveal">Register Now</h2>
-
-          <form id="register-form" class="space-y-5 reveal">
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">Full Name *</label>
-                <input type="text" name="fullName" required class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="Your name">
-              </div>
-              <div>
-                <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">Email *</label>
-                <input type="email" name="email" required class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="you@email.com">
-              </div>
-            </div>
-            <div>
-              <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">Phone *</label>
-              <input type="tel" name="phone" required class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="(403) 555-0123">
-            </div>
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">Handicap</label>
-                <input type="number" name="handicap" step="0.1" min="0" max="54" class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="e.g. 14.4">
-              </div>
-              <div>
-                <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">T-Shirt Size</label>
-                <select name="tshirt" class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white transition-all">
-                  <option value="" class="bg-mscc-black">Select size</option>
-                  <option value="S" class="bg-mscc-black">Small</option>
-                  <option value="M" class="bg-mscc-black">Medium</option>
-                  <option value="L" class="bg-mscc-black">Large</option>
-                  <option value="XL" class="bg-mscc-black">X-Large</option>
-                  <option value="XXL" class="bg-mscc-black">XX-Large</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">Dietary Restrictions</label>
-              <input type="text" name="dietary" class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="Any allergies or restrictions">
-            </div>
-            <div>
-              <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">How did you hear about MSCC?</label>
-              <input type="text" name="referral" class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="Friend, Instagram, word of mouth...">
-            </div>
-            <div>
-              <label class="block text-mscc-cream/70 text-sm mb-1.5 font-medium">Anything else we should know?</label>
-              <textarea name="notes" rows="2" class="form-input w-full px-4 py-3 rounded-lg bg-white/5 border border-white/15 text-white placeholder-white/30 transition-all" placeholder="Group requests, questions, etc."></textarea>
-            </div>
-
-            <button type="submit" class="w-full bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-4 rounded-full text-lg transition-all hover:scale-[1.02] uppercase tracking-wider">
-              Register Now &mdash; $310
-            </button>
-          </form>
-
-          <div id="register-success" class="hidden text-center py-16">
-            <div class="w-20 h-20 bg-mscc-gold/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg class="w-10 h-10 text-mscc-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <h3 class="font-western text-2xl text-mscc-gold mb-4">You're Registered!</h3>
-            <p class="text-mscc-cream/70 mb-6">Now send your E-Transfer to confirm your spot.</p>
-            <div class="border-2 border-mscc-gold rounded-xl p-6 text-left max-w-sm mx-auto">
-              <p class="text-mscc-cream font-semibold mb-2">Send $310 to:</p>
-              <p class="text-mscc-gold font-mono text-lg mb-3">mcdonoughscc@gmail.com</p>
-              <p class="text-white/60 text-sm">Auto-deposit is enabled &mdash; no password needed.<br><strong class="text-white">Include your full name in the memo.</strong></p>
-            </div>
-          </div>
+        <div class="max-w-2xl mx-auto text-center reveal">
+          <h2 class="font-western text-2xl md:text-3xl text-mscc-red mb-5">Thank You</h2>
+          <p class="text-mscc-black/70 leading-relaxed mb-4">109 players are signed up for the 3rd annual MSCC. Registration is officially closed for 2026.</p>
+          <p class="text-mscc-black/70 leading-relaxed mb-8">If you're already registered, the e-transfer details for the $310 entry fee are below. See you at Springbank Links on June 26.</p>
+          <a href="#scoring" data-tab="scoring" class="inline-block bg-mscc-red hover:bg-mscc-red-dark text-white font-bold py-3 px-8 rounded-full uppercase tracking-wider transition-all hover:scale-105">
+            Live Leaderboard
+          </a>
         </div>
       </div>
 
@@ -1631,9 +1553,9 @@
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
       <span>Volunteer</span>
     </a>
-    <a href="#register" class="bottom-nav-link register-link" data-tab="register">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-      <span>Register</span>
+    <a href="#scoring" class="bottom-nav-link register-link" data-tab="scoring">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg>
+      <span>Live Scores</span>
     </a>
   </nav>
 
